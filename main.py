@@ -1,16 +1,37 @@
-# This is a sample Python script.
+# from matplotlib import pyplot as plt
+# from matplotlib.animation import FuncAnimation
+# from functools import partial
+# import math
+#
+# fig, ax = plt.subplots()
+# rect = plt.Rectangle((0, 0), 2, 1)
+# plt.xlim(-10, 10)
+# plt.ylim(-10, 10)
+# plt.axis('equal')
+# ax.add_patch(rect)
+# # rect.set
+#
+#
+# def update(frame_num, obj_list=None):
+#     for obj in obj_list:
+#         obj.set_xy((0.1*frame_num, 0.1*frame_num))
+#         obj.set_angle(frame_num*10*math.pi/180)
+#
+#
+# anime = FuncAnimation(fig=fig, func=partial(update, obj_list=[rect, ]), frames=50, interval=1000/60)
+#
+# anime.save('rect.gif')
 
-# Press Shift+F10 to execute it or replace it with your code.
-# Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
+import vehicle
 
 
-def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}')  # Press Ctrl+F8 to toggle the breakpoint.
+all_veh = list()
+all_veh.append(vehicle.Vehicle())
+all_veh.append(vehicle.Vehicle())
 
+print('121212')
 
-# Press the green button in the gutter to run the script.
-if __name__ == '__main__':
-    print_hi('PyCharm')
-
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
+v = all_veh.pop()
+del v
+v = all_veh.pop()
+del v
