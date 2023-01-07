@@ -37,24 +37,25 @@ class Environment:
         # get actions
         main_road_vehicle_to_action = dict()
         for _vehicle in self.main_road_vehicles:
-            engine_input = _vehicle.get_engine_input()
+            engine_input = _vehicle.get_cacc_engine_input()
             action = self.cacc_engine.gen_action(engine_input)
             main_road_vehicle_to_action[_vehicle] = action
 
         merge_road_vehicle_in_cacc_to_action = dict()
         for _vehicle in self.merge_road_vehicles_in_cacc:
-            engine_input = _vehicle.get_engine_input()
+            engine_input = _vehicle.get_cacc_engine_input()
             action = self.cacc_engine.gen_action(engine_input)
             merge_road_vehicle_in_cacc_to_action[_vehicle] = action
 
         merge_road_vehicle_in_rl_to_action = dict()
         merge_road_vehicle_in_rl_to_rl_state = dict()
         for _vehicle in self.merge_road_vehicles_in_rl:
-            engine_input = _vehicle.get_engine_input()
+            engine_input = _vehicle.get_rl_engine_input()
             action = self.rl_engine.gen_action(engine_input)
             merge_road_vehicle_in_rl_to_action[_vehicle] = action
 
-            rl_state = _vehicle.get_rl_state()
+            # rl_state = _vehicle.get_rl_state()
+            rl_state = engine_input
             merge_road_vehicle_in_rl_to_rl_state[_vehicle] = rl_state
 
         # execute actions
@@ -71,6 +72,7 @@ class Environment:
         merge_road_vehicle_in_rl_done = []
         for _vehicle in self.merge_road_vehicles_in_rl:
             rl_state_ = _vehicle.get_rl_state()
+            # reward, done = self._calculate_reward(rl_state, action)
             reward, done = self._calculate_reward(rl_state_)
             t = (merge_road_vehicle_in_rl_to_rl_state[_vehicle],
                  merge_road_vehicle_in_rl_to_action[_vehicle],
@@ -93,17 +95,19 @@ class Environment:
             if done:
                 merge_road_vehicle_in_cacc_done.append(_vehicle)
 
-        self.del_done_vehicle(main_road_vehicle_done, merge_road_vehicle_in_cacc_done, merge_road_vehicle_in_rl_done)
+        self._del_done_vehicle(main_road_vehicle_done, merge_road_vehicle_in_cacc_done, merge_road_vehicle_in_rl_done)
 
         self._change_mode()
 
         return self.buffer.size()
 
-    def del_done_vehicle(self, main_road_vehicle_done, merge_road_vehicle_in_cacc_done, merge_road_vehicle_in_rl_done):
+    def _del_done_vehicle(self, main_road_vehicle_done, merge_road_vehicle_in_cacc_done, merge_road_vehicle_in_rl_done):
         for _vehicle in main_road_vehicle_done:
             self.main_road_vehicles.remove(_vehicle)
+            del _vehicle
         for _vehicle in merge_road_vehicle_in_cacc_done:
             self.merge_road_vehicles_in_cacc.remove(_vehicle)
+            del _vehicle
         for _vehicle in merge_road_vehicle_in_rl_done:
             self.merge_road_vehicles_in_rl.remove(_vehicle)
             self.buffer.input_data(_vehicle.get_data())
