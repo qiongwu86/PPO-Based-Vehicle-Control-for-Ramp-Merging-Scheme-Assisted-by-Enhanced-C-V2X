@@ -37,7 +37,7 @@ for i in range(10000):
     print("------------------------------------------------------")
     print("episode {0}/{1}".format(i+1, 10000))
     env.step()
-    al, cl = RL_ENG.train(5000, 256)
+    al, cl = RL_ENG.train(50, 256)
     actor_loss.append(al)
     critic_loss.append(cl)
 

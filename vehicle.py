@@ -29,7 +29,7 @@ class Vehicle:
     sensing_distance = 100.0
     expect_speed = 20.0
     init_speed = 15.0
-    speed_max = 30
+    speed_max = 25
 
     def __init__(self, ego_id: int, mode: Mode):
         self.id = ego_id
@@ -65,17 +65,15 @@ class Vehicle:
                 self.mode = Mode.MERGE_CACC
             return
 
-    def check_and_delete_self(self):
+    def check_and_if_delete_self(self):
         if self.x > 100:
-            Vehicle.all_vehicle.remove(self)
-            return
+            return True
 
         if self.mode is not Mode.MERGE_RL:
-            return
+            return False
 
         if self.coll_with_edge() or self.coll_with_other():
-            Vehicle.all_vehicle.remove(self)
-            return
+            return True
 
     def coll_with_edge(self):
         four_points = utilities.get_four_points(self.x, self.y, self.body_angle)

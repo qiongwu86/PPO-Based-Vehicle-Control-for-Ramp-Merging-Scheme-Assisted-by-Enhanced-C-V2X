@@ -1,4 +1,3 @@
-import fontTools.varLib.errors
 import numpy as np
 import torch.nn as nn
 import torch.nn.functional as F
@@ -31,7 +30,7 @@ class cacc_engine:
         if 0 < spacingErr < 0.2 and speedErr < 0.1:
             return v + 0.45 * spacingErr + 0.125 * spacingErr1
         elif spacingErr < 0:
-            return v + 0.6 * spacingErr + 0.05 * spacingErr1
+            return v + 1.0 * spacingErr + 0.05 * spacingErr1
         else:
             return v + 0.45 * spacingErr + 0.005 * spacingErr1
 

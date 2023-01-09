@@ -23,7 +23,7 @@ def get_four_points(x: float, y: float, body_angle: float):
 
 
 def check_two_vehicles_collision(v1_state, v2_state):
-    if np.linalg.norm([v1_state[0] - v2_state[0], v1_state[1] - v2_state[1]]) > 10:
+    if np.linalg.norm([v1_state[0] - v2_state[0], v1_state[1] - v2_state[1]]) > 15:
         return False
 
     v1_four_points = get_four_points(v1_state[0], v1_state[1], v1_state[2])
@@ -60,17 +60,17 @@ def update(frame_num, obj_dict, obj_data):
 
 
 def get_central(x, y, body_angle):
-    return x+math.cos(body_angle)*2.25, y+math.sin(body_angle)*2.25
+    return x+math.sin(body_angle), y-math.cos(body_angle)
 
 
 def draw_road():
     temp = TAN_15 * 200
-    plt.plot([-575, 100], [0.5 * 3.75, 0.5 * 3.75], color='r')
-    plt.plot([-575, -175], [-0.5 * 3.75, -0.5 * 3.75], color='r')
-    plt.plot([-575, -375], [-0.5 * 3.75 - temp, -0.5 * 3.75 - temp], color='r')
-    plt.plot([-375, -175], [-0.5 * 3.75 - temp, -0.5 * 3.75], color='r')
-    plt.plot([-575, -375], [-1.5 * 3.75 - temp, -1.5 * 3.75 - temp], color='r')
-    plt.plot([-375, -175], [-1.5 * 3.75 - temp, -1.5 * 3.75], color='r')
-    plt.plot([-175, 0], [-1.5 * 3.75, -1.5 * 3.75], color='r')
-    plt.plot([0, 0], [-1.5 * 3.75, -0.5 * 3.75], color='r')
-    plt.plot([0, 100], [-0.5 * 3.75, -0.5 * 3.75], color='r')
+    plt.plot([-575, 100], [0.5 * 3.75, 0.5 * 3.75], color='b')
+    plt.plot([-575, -175], [-0.5 * 3.75, -0.5 * 3.75], color='b')
+    plt.plot([-575, -375], [-0.5 * 3.75 - temp, -0.5 * 3.75 - temp], color='b')
+    plt.plot([-375, -175], [-0.5 * 3.75 - temp, -0.5 * 3.75], color='b')
+    plt.plot([-575, -375], [-1.5 * 3.75 - temp, -1.5 * 3.75 - temp], color='b')
+    plt.plot([-375, -175], [-1.5 * 3.75 - temp, -1.5 * 3.75], color='b')
+    plt.plot([-175, 0], [-1.5 * 3.75, -1.5 * 3.75], color='b')
+    plt.plot([0, 0], [-1.5 * 3.75, -0.5 * 3.75], color='b')
+    plt.plot([0, 100], [-0.5 * 3.75, -0.5 * 3.75], color='b')
