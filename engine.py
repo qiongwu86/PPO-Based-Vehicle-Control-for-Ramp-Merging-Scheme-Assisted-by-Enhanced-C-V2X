@@ -66,7 +66,7 @@ class rl_engine:
     def generate_action_for_test(self, state):
         state = torch.from_numpy(state).view((1, -1))
         alpha, beta = self.actor(state)
-        mode = (alpha - 1) / (alpha + beta - 2)
+        mode = (alpha[0] - 1) / (alpha[0] + beta[0] - 2)
         action = self._scale_action(mode)
         return action.clone().detach().numpy()
 
@@ -80,10 +80,11 @@ class rl_engine:
     #     pass
 
     def train(self, times_per_buffer, batch_size):
+        print("training...")
         actor_losses = []
         critic_losses = []
         for t in range(times_per_buffer):
-            print("\r train {0}/{1}".format(t, times_per_buffer), end="")
+            print("\r train {0}/{1}".format(t+1, times_per_buffer), end="")
             mini_batch = self.buffer.get_mini_batch(batch_size)
             s = torch.from_numpy(mini_batch[0]).detach()
             a = self._rescale_action(torch.from_numpy(mini_batch[1]).detach())
@@ -112,7 +113,7 @@ class rl_engine:
             actor_loss.backward()
             self.actor_opt.step()
             actor_losses.append(actor_loss.detach())
-
+        print("\n train complete")
         return np.mean(actor_losses), np.mean(critic_losses)
 
     def save_model(self, name):

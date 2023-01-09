@@ -35,6 +35,7 @@ class Environment:
         self._env_init()
         self.rl_engine.buffer.clear()
 
+        print("collecting data for train...")
         while not self.rl_engine.buffer.full():
             self._add_new()
 
@@ -82,7 +83,7 @@ class Environment:
             for v in self.all_vehicles:
                 v.change_mode()
 
-        print("buffer is full")
+        print("\n buffer is full")
 
     def _add_new(self):
         self.main_road_spawn_count -= 1
@@ -161,8 +162,7 @@ class Environment:
             vehicle_to_action = dict()
             for v in self.all_vehicles:
                 if v.mode is Mode.MERGE_RL:
-                    vehicle_to_action[v], _ \
-                        = self.rl_engine.generate_action(vehicle_to_state[v])
+                    vehicle_to_action[v] = self.rl_engine.generate_action_for_test(vehicle_to_state[v])
                 else:
                     vehicle_to_action[v] = self.cacc_engine.generate_action(vehicle_to_state[v])
 
@@ -175,7 +175,7 @@ class Environment:
             for v in self.all_vehicles:
                 v.change_mode()
 
-        print("collect data done")
+        print("\r collect data done")
 
         fig = plt.figure()
         ax = plt.axes()
