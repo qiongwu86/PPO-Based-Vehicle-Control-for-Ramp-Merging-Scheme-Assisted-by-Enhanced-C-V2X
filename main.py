@@ -21,17 +21,41 @@
 # anime = FuncAnimation(fig=fig, func=partial(update, obj_list=[rect, ]), frames=50, interval=1000/60)
 #
 # anime.save('rect.gif')
+import matplotlib.pyplot as plt
 
-import vehicle
+import engine
+import environment
+
+CACC_ENG = engine.cacc_engine()
+RL_ENG = engine.rl_engine(9)
+env = environment.Environment(CACC_ENG, RL_ENG)
+
+actor_loss = []
+critic_loss = []
+
+for i in range(1000):
+    env.step()
+    al, cl = RL_ENG.train(30, 256)
+    actor_loss.append(al)
+    critic_loss.append(cl)
+
+    if i % 20 == 0:
+
+        RL_ENG.save_model(str(i))
+
+        env.draw_trace(str(i))
+
+        plt.figure()
+        plt.plot(actor_loss)
+        plt.savefig("./loss_plot/" + str(i) + "_actor_loss.jpg")
+        plt.close()
+
+        plt.figure()
+        plt.plot(critic_loss)
+        plt.savefig("./loss_plot/" + str(i) + "_critic_loss.jpg")
+        plt.close()
 
 
-all_veh = list()
-all_veh.append(vehicle.Vehicle())
-all_veh.append(vehicle.Vehicle())
 
-print('121212')
 
-v = all_veh.pop()
-del v
-v = all_veh.pop()
-del v
+

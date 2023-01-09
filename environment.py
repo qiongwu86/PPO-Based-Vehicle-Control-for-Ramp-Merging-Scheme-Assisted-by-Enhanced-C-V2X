@@ -1,136 +1,201 @@
-import torch
+import math
 import numpy as np
-import vehicle
-import engine
+
+import utilities
+from vehicle import Vehicle, Mode
 import random
+from matplotlib import pyplot as plt
+from matplotlib.animation import FuncAnimation
+from functools import partial
 
 
 class Environment:
-    def __int__(self, env_param):
-        self.cacc_engine = engine.cacc_engine()
-        self.rl_engine = engine.rl_engine()
+    vehicle_random_num = [6, 7]
 
-        self.main_road_vehicles = list()
-        self.merge_road_vehicles_in_cacc = list()
-        self.merge_road_vehicles_in_rl = list()
+    def __init__(self, cacc_engine, rl_engine):
+        self.cacc_engine = cacc_engine
+        self.rl_engine = rl_engine
+
+        self.all_vehicles = Vehicle.all_vehicle
+
+        self.id_count = 0
 
         self.main_road_spawn_count = 0
         self.merge_road_spawn_count = 0
 
-        self.id_count = 0
+        # self.buffer = None
 
-        self.buffer = None
-
-    def env_init(self):
-        self.id_count = 0
-
-        self.main_road_vehicles.clear()
-        self.merge_road_vehicles_in_rl.clear()
-        self.merge_road_vehicles_in_cacc.clear()
-
-        self.main_road_spawn_count += random.randint(10, 20)
-        self.merge_road_spawn_count += random.randint(10, 20)
+    def _env_init(self):
+        self.id_count -= self.id_count
+        self.all_vehicles.clear()
+        self.main_road_spawn_count = random.randint(10, 15)
+        self.merge_road_spawn_count = random.randint(10, 15)
 
     def step(self):
-        self._add_new()
+        self._env_init()
+        self.rl_engine.buffer.clear()
 
-        # get actions
-        main_road_vehicle_to_action = dict()
-        for _vehicle in self.main_road_vehicles:
-            engine_input = _vehicle.get_cacc_engine_input()
-            action = self.cacc_engine.gen_action(engine_input)
-            main_road_vehicle_to_action[_vehicle] = action
+        while not self.rl_engine.buffer.full():
+            self._add_new()
 
-        merge_road_vehicle_in_cacc_to_action = dict()
-        for _vehicle in self.merge_road_vehicles_in_cacc:
-            engine_input = _vehicle.get_cacc_engine_input()
-            action = self.cacc_engine.gen_action(engine_input)
-            merge_road_vehicle_in_cacc_to_action[_vehicle] = action
+            vehicle_to_state = dict()
+            for v in self.all_vehicles:
+                vehicle_to_state[v] = v.get_state()
 
-        merge_road_vehicle_in_rl_to_action = dict()
-        merge_road_vehicle_in_rl_to_rl_state = dict()
-        for _vehicle in self.merge_road_vehicles_in_rl:
-            engine_input = _vehicle.get_rl_engine_input()
-            action = self.rl_engine.gen_action(engine_input)
-            merge_road_vehicle_in_rl_to_action[_vehicle] = action
+            vehicle_to_action = dict()
+            vehicle_to_log_porb = dict()
+            for v in self.all_vehicles:
+                if v.mode is Mode.MERGE_RL:
+                    vehicle_to_action[v], vehicle_to_log_porb[v] \
+                        = self.rl_engine.generate_action(vehicle_to_state[v])
+                else:
+                    vehicle_to_action[v] = self.cacc_engine.generate_action(vehicle_to_state[v])
 
-            # rl_state = _vehicle.get_rl_state()
-            rl_state = engine_input
-            merge_road_vehicle_in_rl_to_rl_state[_vehicle] = rl_state
+            for v in self.all_vehicles:
+                v.input_action(vehicle_to_action[v])
 
-        # execute actions
-        for _vehicle, _action in main_road_vehicle_to_action:
-            _vehicle.execute_action(_action)
+            vehicle_to_state_ = dict()
+            for v in self.all_vehicles:
+                if v.mode is Mode.MERGE_RL:
+                    vehicle_to_state_[v] = v.get_state()
 
-        for _vehicle, _action in merge_road_vehicle_in_cacc_to_action:
-            _vehicle.execute_action(_action)
+            vehicle_to_reward = dict()
+            for v in self.all_vehicles:
+                if v.mode is Mode.MERGE_RL:
+                    vehicle_to_reward[v], done = self._calculate_reward(v,
+                                                                        vehicle_to_state[v],
+                                                                        vehicle_to_action[v],
+                                                                        vehicle_to_state_[v])
+                    v.buffer.input((vehicle_to_state[v],
+                                    vehicle_to_action[v],
+                                    vehicle_to_reward[v],
+                                    vehicle_to_state_[v],
+                                    vehicle_to_log_porb[v]))
 
-        for _vehicle, _action in merge_road_vehicle_in_rl_to_action:
-            _vehicle.execute_action(_action)
+                    if done:
+                        self.rl_engine.buffer.add_episode_data(v.buffer.calculate_return())
+                        print("\r buffer size = ", self.rl_engine.buffer.ptr, end="")
 
-        # get reward and next state and check done
-        merge_road_vehicle_in_rl_done = []
-        for _vehicle in self.merge_road_vehicles_in_rl:
-            rl_state_ = _vehicle.get_rl_state()
-            # reward, done = self._calculate_reward(rl_state, action)
-            reward, done = self._calculate_reward(rl_state_)
-            t = (merge_road_vehicle_in_rl_to_rl_state[_vehicle],
-                 merge_road_vehicle_in_rl_to_action[_vehicle],
-                 reward,
-                 rl_state_)
-            _vehicle.input_tuple(t)
-            if done:
-                merge_road_vehicle_in_rl_done.append(_vehicle)
+            for v in self.all_vehicles:
+                v.check_and_delete_self()
 
-        # check_done
-        main_road_vehicle_done = []
-        for _vehicle in self.main_road_vehicles:
-            done = _vehicle.check_done()
-            if done:
-                main_road_vehicle_done.append(_vehicle)
+            for v in self.all_vehicles:
+                v.change_mode()
 
-        merge_road_vehicle_in_cacc_done = []
-        for _vehicle in self.merge_road_vehicles_in_cacc:
-            done = _vehicle.check_done()
-            if done:
-                merge_road_vehicle_in_cacc_done.append(_vehicle)
-
-        self._del_done_vehicle(main_road_vehicle_done, merge_road_vehicle_in_cacc_done, merge_road_vehicle_in_rl_done)
-
-        self._change_mode()
-
-        return self.buffer.size()
-
-    def _del_done_vehicle(self, main_road_vehicle_done, merge_road_vehicle_in_cacc_done, merge_road_vehicle_in_rl_done):
-        for _vehicle in main_road_vehicle_done:
-            self.main_road_vehicles.remove(_vehicle)
-            del _vehicle
-        for _vehicle in merge_road_vehicle_in_cacc_done:
-            self.merge_road_vehicles_in_cacc.remove(_vehicle)
-            del _vehicle
-        for _vehicle in merge_road_vehicle_in_rl_done:
-            self.merge_road_vehicles_in_rl.remove(_vehicle)
-            self.buffer.input_data(_vehicle.get_data())
-            del _vehicle
+        print("buffer is full")
 
     def _add_new(self):
         self.main_road_spawn_count -= 1
         self.merge_road_spawn_count -= 1
         if self.main_road_spawn_count == 0:
-            self.main_road_spawn_count += random.randint(10, 20)
-            self.main_road_vehicles.append(vehicle.Vehicle(self.id_count))
+            self.main_road_spawn_count += random.randint(10, 15)
+            Vehicle(self.id_count, Mode.MAIN_CACC)
             self.id_count += 1
         if self.merge_road_spawn_count == 0:
-            self.merge_road_spawn_count += random.randint(10, 20)
-            self.merge_road_vehicles_in_cacc.append(vehicle.Vehicle(self.id_count))
+            self.merge_road_spawn_count += random.randint(10, 15)
+            Vehicle(self.id_count, Mode.MERGE_CACC)
             self.id_count += 1
 
-    def _calculate_reward(self, rl_state_):
-        return 0.0, False
+    @staticmethod
+    def _calculate_reward(vehicle, state, action, state_):
+        if vehicle.coll_with_edge() or vehicle.coll_with_other():
+            return np.array([-100.0]), True
+        if vehicle.x > 0:
+            return np.array([100.0]), True
+        last_body_angle = state[4]
+        x, y_rear, y_front, speed, body_angle = state_[0: 5]
+        prev_dist, prev_delta_speed = state_[5: 7]
+        foll_dist, foll_delta_speed = state_[7: 9]
 
-    def _change_mode(self):
-        for _vehicle in self.merge_road_vehicles_in_cacc:
-            pass
+        x_reward = -abs(x / 175)
+        y_reward = -(1 - abs(x/175)) * (abs(y_rear) + abs(y_front)) * 0.125
+        speed_reward = math.exp(-abs(speed - Vehicle.expect_speed)) - 1
+        body_angle_reward = -pow(body_angle / math.pi, 2) \
+                            - abs(body_angle - last_body_angle) * 50
 
-        for _vehicle in self.merge_road_vehicles_in_rl:
-            pass
+        expect_dist_with_prev = Vehicle.headway_time * vehicle.calculate_longitude_speed()
+        prev_reward = np.clip(math.exp(prev_dist - expect_dist_with_prev) - 1, -1, 0) + \
+                      math.exp(-abs(prev_delta_speed)) - 1.0
+
+        expect_dist_with_foll = Vehicle.headway_time * (vehicle.calculate_longitude_speed() - foll_delta_speed)
+        foll_reward = np.clip(math.exp(foll_dist - expect_dist_with_foll) - 1, -1, 0) + \
+                      math.exp(-abs(foll_delta_speed)) - 1.0
+
+        action_reward = -pow(action[0], 2) - pow(action[1] / Vehicle.steer_max, 2)
+
+        return np.array([(x_reward + y_reward +
+                          speed_reward + body_angle_reward +
+                          prev_reward + foll_reward +
+                          action_reward*2) / 6], dtype=np.float32), \
+            False
+
+    def draw_trace(self, name):
+        self._env_init()
+
+        main_veh_num, merge_veh_num = random.sample(Environment.vehicle_random_num, 2)
+
+        start_point = random.uniform(0, 5)
+        for i in range(main_veh_num):
+            v = Vehicle(i, Mode.MAIN_CACC)
+            v.x = -(375 + start_point)
+            start_point += 200 / (main_veh_num-1) + random.uniform(-3, 3)
+
+        start_point = random.uniform(0, 5)
+        for i in range(main_veh_num, main_veh_num + merge_veh_num):
+            v = Vehicle(i, Mode.MERGE_CACC)
+            v.x = -(375 + start_point)
+            start_point += 200 / (merge_veh_num-1) + random.uniform(-3, 3)
+
+        all_data = list()
+        while len(Vehicle.all_vehicle) != 0:
+            vehicle_to_state = dict()
+            for v in self.all_vehicles:
+                vehicle_to_state[v] = v.get_state()
+
+            one_time_data = list()
+            for v in self.all_vehicles:
+                one_time_data.append(v.state_for_draw())
+
+            all_data.append(one_time_data)
+
+            vehicle_to_action = dict()
+            for v in self.all_vehicles:
+                if v.mode is Mode.MERGE_RL:
+                    vehicle_to_action[v], _ \
+                        = self.rl_engine.generate_action(vehicle_to_state[v])
+                else:
+                    vehicle_to_action[v] = self.cacc_engine.generate_action(vehicle_to_state[v])
+
+            for v in self.all_vehicles:
+                v.input_action(vehicle_to_action[v])
+
+            for v in self.all_vehicles:
+                v.check_and_delete_self()
+
+            for v in self.all_vehicles:
+                v.change_mode()
+
+        print("collect data done")
+
+        fig = plt.figure()
+        ax = plt.axes()
+        ax.set_aspect(1)
+
+        plt.xlim(-175, 0)
+        plt.ylim(-60, 10)
+
+        utilities.draw_road()
+
+        all_rect = dict()
+        first_data = all_data[0]
+        for one_vehicle in first_data:
+            v_id = one_vehicle[0]
+            all_rect[v_id] = plt.Rectangle((one_vehicle[2], one_vehicle[3]), 4.5, 2.0)
+            ax.add_patch(all_rect[v_id])
+
+        anime = FuncAnimation(fig=fig, func=partial(utilities.update,
+                                                    obj_dict=all_rect,
+                                                    obj_data=all_data), frames=len(all_data),  interval=1000 / 60)
+
+        anime.save("./gifs/demo_" + name + ".gif")
+        plt.close()
