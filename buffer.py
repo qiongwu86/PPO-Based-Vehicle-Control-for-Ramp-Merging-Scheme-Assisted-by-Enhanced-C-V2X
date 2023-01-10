@@ -5,7 +5,7 @@ import numpy as np
 
 class MainBuffer:
     def __init__(self):
-        self.total_length = 10000
+        self.total_length = 14000
         self.state = np.zeros([self.total_length, 9], dtype=np.float32)
         self.action = np.zeros([self.total_length, 2], dtype=np.float32)
         self.reward = np.zeros([self.total_length, 1], dtype=np.float32)
@@ -49,7 +49,7 @@ class MainBuffer:
 
 class SubBuffer:
     def __init__(self):
-        self.total_length = 2000
+        self.total_length = 6000
         self.state = np.zeros([self.total_length, 9], dtype=np.float32)
         self.action = np.zeros([self.total_length, 2], dtype=np.float32)
         self.reward = np.zeros([self.total_length, 1], dtype=np.float32)
@@ -77,12 +77,12 @@ class SubBuffer:
         for i in reversed(range(self.ptr)):
             self.discount_return[i] = self.reward[i] + self.gamma*self.discount_return[i+1]
 
-        return tuple((self.state[:self.ptr].copy(),
-                      self.action[:self.ptr].copy(),
-                      self.reward[:self.ptr].copy(),
-                      self.state_[:self.ptr].copy(),
-                      self.discount_return[:self.ptr].copy(),
-                      self.log_prob[:self.ptr].copy()))
+        return tuple((self.state[:self.ptr],
+                      self.action[:self.ptr],
+                      self.reward[:self.ptr],
+                      self.state_[:self.ptr],
+                      self.discount_return[:self.ptr],
+                      self.log_prob[:self.ptr]))
 
     def size(self):
         return self.ptr

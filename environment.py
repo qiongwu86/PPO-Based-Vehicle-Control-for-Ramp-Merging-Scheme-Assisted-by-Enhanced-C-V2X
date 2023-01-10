@@ -132,7 +132,7 @@ class Environment:
         y_reward = -(1 - abs(x/175)) * (abs(y_rear) + abs(y_front)) * 0.125
         speed_reward = math.exp(-abs(speed - Vehicle.expect_speed)) - 1
         body_angle_reward = -pow(body_angle / math.pi, 2) \
-                            - abs(body_angle - last_body_angle) * 50
+                            - abs(body_angle - last_body_angle) * 5
 
         expect_dist_with_prev = Vehicle.headway_time * vehicle.calculate_longitude_speed()
         prev_reward = np.clip(math.exp(prev_dist - expect_dist_with_prev) - 1, -1, 0) + \
@@ -142,8 +142,8 @@ class Environment:
         foll_reward = np.clip(math.exp(foll_dist - expect_dist_with_foll) - 1, -1, 0) + \
                       math.exp(-abs(foll_delta_speed)) - 1.0
 
-        action_reward = -pow(action[0] / 0.5*(Vehicle.acc_max - Vehicle.acc_min), 2) \
-                        - pow(action[1] / 0.5*(Vehicle.steer_max-Vehicle.steer_min), 2)
+        action_reward = -pow(action[0] / (0.5*(Vehicle.acc_max - Vehicle.acc_min)), 2) \
+                        - pow(action[1] / (0.5*(Vehicle.steer_max-Vehicle.steer_min)), 2)
 
         return np.array([(x_reward + y_reward +
                           speed_reward + body_angle_reward +

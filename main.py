@@ -25,10 +25,16 @@ import matplotlib.pyplot as plt
 
 import engine
 import environment
+import torch
 
 CACC_ENG = engine.cacc_engine()
 RL_ENG = engine.rl_engine(9)
 env = environment.Environment(CACC_ENG, RL_ENG)
+
+#
+# RL_ENG.actor.load_state_dict(torch.load("./model_param/660_actor_param.pkl"))
+# env.draw_trace(str(2))
+
 
 actor_loss = []
 critic_loss = []
@@ -56,8 +62,8 @@ for i in range(10000):
         plt.plot(critic_loss)
         plt.savefig("./loss_plot/" + str(i) + "_critic_loss.jpg")
         plt.close()
-
-
-
-
-
+#
+#
+#
+#
+#

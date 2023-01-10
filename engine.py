@@ -53,7 +53,7 @@ class rl_engine:
         self.clip = 0.5
 
     def generate_action(self, state):
-        state = torch.from_numpy(state).view((1, -1))
+        state = torch.from_numpy(state).clone().view((1, -1))
         alpha, beta = self.actor(state)
         beta_dist = torch.distributions.Beta(alpha[0], beta[0])
         action = beta_dist.sample()
@@ -63,9 +63,9 @@ class rl_engine:
         # return np.array([0.0, 0.0]), np.array([1.0])
 
     def generate_action_for_test(self, state):
-        state = torch.from_numpy(state).view((1, -1))
+        state = torch.from_numpy(state).clone().view((1, -1))
         alpha, beta = self.actor(state)
-        mode = (alpha[0] - 1) / (alpha[0] + beta[0] - 2)
+        mode = alpha[0] / (alpha[0] + beta[0])
         action = self._scale_action(mode)
         return action.clone().detach().numpy()
 
@@ -93,7 +93,7 @@ class rl_engine:
             l_p_old = torch.from_numpy(mini_batch[5]).detach()
 
             current_state_value = self.critic(s)
-            critic_loss = torch.mean(torch.pow(r - current_state_value, 2))
+            critic_loss = torch.mean(torch.pow(d_r - current_state_value, 2))
             self.critic_opt.zero_grad()
             critic_loss.backward()
             self.critic_opt.step()
@@ -138,16 +138,17 @@ class Actor(nn.Module):
         state = F.leaky_relu(self.layer1(state))
         state = F.leaky_relu(self.layer2(state))
 
-        alpha = torch.tanh(self.alpha1(state))
+        alpha = F.leaky_relu(self.alpha1(state))
         alpha = F.softplus(self.alpha2(alpha)) + 1.0
 
-        beta = torch.tanh(self.beta1(state))
+        beta = F.leaky_relu(self.beta1(state))
         beta = F.softplus(self.beta2(beta)) + 1.0
 
         return alpha, beta
 
     @staticmethod
     def pre_input(state):
+        state /= torch.tensor([175, 3.75, 3.75, 20, 1, 20, 1, 20, 1])
         return state
 
 
@@ -162,10 +163,11 @@ class Critic(nn.Module):
         state = self.pre_input(state)
         state = F.leaky_relu((self.layer1(state)))
         state = F.leaky_relu((self.layer2(state)))
-        value = (self.layer3(state))
+        value = self.layer3(state)
         return value
 
     @staticmethod
     def pre_input(state):
+        state /= torch.tensor([175, 3.75, 3.75, 20, 1, 20, 1, 20, 1])
         return state
 
