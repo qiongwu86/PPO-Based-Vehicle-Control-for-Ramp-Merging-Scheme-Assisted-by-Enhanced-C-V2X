@@ -39,18 +39,18 @@ class rl_engine:
     def __init__(self, state_dim):
         self.buffer = buffer.MainBuffer()
 
-        self.actor = Actor(state_dim)
-        self.actor_opt = torch.optim.Adam(self.actor.parameters(), lr=1e-3)
+        self.actor = Actor(state_dim, True)
+        self.actor_opt = torch.optim.Adam(self.actor.parameters(), lr=1e-5)
 
-        self.critic = Critic(state_dim)
-        self.critic_opt = torch.optim.Adam(self.critic.parameters(), lr=5e-4)
+        self.critic = Critic(state_dim, True)
+        self.critic_opt = torch.optim.Adam(self.critic.parameters(), lr=1e-5)
 
         self.action_scale = torch.tensor([vehicle.Vehicle.acc_max - vehicle.Vehicle.acc_min,
                                           vehicle.Vehicle.steer_max - vehicle.Vehicle.steer_min])
         self.action_mean = torch.tensor([0.5*(vehicle.Vehicle.acc_max+vehicle.Vehicle.acc_min),
                                          0.5*(vehicle.Vehicle.steer_max+vehicle.Vehicle.steer_min)])
 
-        self.clip = 0.5
+        self.clip = 0.2
 
     def generate_action(self, state):
         state = torch.from_numpy(state).clone().view((1, -1))
@@ -88,14 +88,14 @@ class rl_engine:
             s_ = torch.from_numpy(mini_batch[3]).detach()
             d_r = torch.from_numpy(mini_batch[4]).detach()
             l_p_old = torch.from_numpy(mini_batch[5]).detach()
-
+            # critic
             current_state_value = self.critic(s)
             critic_loss = torch.mean(torch.pow(d_r - current_state_value, 2))
             self.critic_opt.zero_grad()
             critic_loss.backward()
             self.critic_opt.step()
             critic_losses.append(critic_loss.detach())
-
+            # actor
             alpha, beta = self.actor(s)
             beta_dist = torch.distributions.Beta(alpha, beta)
             l_p = beta_dist.log_prob(a).sum(1, keepdim=True)
@@ -125,7 +125,7 @@ class rl_engine:
             s_ = torch.from_numpy(mini_batch[3]).detach()
             d_r = torch.from_numpy(mini_batch[4]).detach()
             l_p_old = torch.from_numpy(mini_batch[5]).detach()
-
+            # critic
             next_state_value = self.critic(s_)
             current_state_value = self.critic(s)
             critic_loss = torch.mean(torch.pow(r + self.buffer.gamma*next_state_value - current_state_value, 2))
@@ -133,7 +133,7 @@ class rl_engine:
             critic_loss.backward()
             self.critic_opt.step()
             critic_losses.append(critic_loss.detach())
-
+            # actor
             alpha, beta = self.actor(s)
             beta_dist = torch.distributions.Beta(alpha, beta)
             l_p = beta_dist.log_prob(a).sum(1, keepdim=True)
@@ -154,30 +154,65 @@ class rl_engine:
         torch.save(self.actor.state_dict(), "./model_param/" + name + "_actor_param.pkl")
         torch.save(self.critic.state_dict(), "./model_param/" + name + "_critic_param.pkl")
 
+    def prep_train(self):
+        self.actor.train()
+        self.critic.train()
+
+    def prep_eval(self):
+        self.actor.eval()
+        self.critic.eval()
+
 
 class Actor(nn.Module):
-    def __init__(self, state_dim):
+    def __init__(self, state_dim, batch_norm=False):
         super(Actor, self).__init__()
         self.state_dim = state_dim
-        self.layer1 = torch.nn.Linear(state_dim, 256)
-        self.layer2 = torch.nn.Linear(256, 256)
+        self.batch_norm = batch_norm
 
-        self.alpha1 = torch.nn.Linear(256, 256)
-        self.alpha2 = torch.nn.Linear(256, 2, bias=False)
+        if not self.batch_norm:
+            self.layer1 = torch.nn.Linear(state_dim, 256)
+            self.layer2 = torch.nn.Linear(256, 256)
 
-        self.beta1 = torch.nn.Linear(256, 256)
-        self.beta2 = torch.nn.Linear(256, 2, bias=False)
+            self.alpha1 = torch.nn.Linear(256, 256)
+            self.alpha2 = torch.nn.Linear(256, 2, bias=False)
+
+            self.beta1 = torch.nn.Linear(256, 256)
+            self.beta2 = torch.nn.Linear(256, 2, bias=False)
+        else:
+            self.layer1 = torch.nn.Linear(state_dim, 256, bias=False)
+            self.bn1 = torch.nn.BatchNorm1d(256)
+            self.layer2 = torch.nn.Linear(256, 256, bias=False)
+            self.bn2 = torch.nn.BatchNorm1d(256)
+
+            self.alpha1 = torch.nn.Linear(256, 256, bias=False)
+            self.bna1 = torch.nn.BatchNorm1d(256)
+            self.alpha2 = torch.nn.Linear(256, 2, bias=False)
+
+            self.beta1 = torch.nn.Linear(256, 256, bias=False)
+            self.bnb1 = torch.nn.BatchNorm1d(256)
+            self.beta2 = torch.nn.Linear(256, 2, bias=False)
 
     def forward(self, state):
-        state = self.pre_input(state)
-        state = F.leaky_relu(self.layer1(state))
-        state = F.leaky_relu(self.layer2(state))
+        if not self.batch_norm:
+            state = self.pre_input(state)
+            state = F.leaky_relu(self.layer1(state))
+            state = F.leaky_relu(self.layer2(state))
 
-        alpha = F.leaky_relu(self.alpha1(state))
-        alpha = F.softplus(self.alpha2(alpha)) + 1.0
+            alpha = F.leaky_relu(self.alpha1(state))
+            alpha = F.softplus(self.alpha2(alpha)) + 1.0
 
-        beta = F.leaky_relu(self.beta1(state))
-        beta = F.softplus(self.beta2(beta)) + 1.0
+            beta = F.leaky_relu(self.beta1(state))
+            beta = F.softplus(self.beta2(beta)) + 1.0
+        else:
+            state = self.pre_input(state)
+            state = F.leaky_relu(self.bn1(self.layer1(state)))
+            state = F.leaky_relu(self.bn2(self.layer2(state)))
+
+            alpha = F.leaky_relu(self.bna1(self.alpha1(state)))
+            alpha = F.softplus(self.alpha2(alpha)) + 1.0
+
+            beta = F.leaky_relu(self.bnb1(self.beta1(state)))
+            beta = F.softplus(self.beta2(beta)) + 1.0
 
         return alpha, beta
 
@@ -188,17 +223,31 @@ class Actor(nn.Module):
 
 
 class Critic(nn.Module):
-    def __init__(self, state_dim):
+    def __init__(self, state_dim, batch_norm=False):
         super(Critic, self).__init__()
-        self.layer1 = nn.Linear(state_dim, 256)
-        self.layer2 = nn.Linear(256, 256)
-        self.layer3 = nn.Linear(256, 1)
+        self.batch_norm = batch_norm
+        if not self.batch_norm:
+            self.layer1 = nn.Linear(state_dim, 256)
+            self.layer2 = nn.Linear(256, 256)
+            self.layer3 = nn.Linear(256, 1)
+        else:
+            self.layer1 = nn.Linear(state_dim, 256, bias=False)
+            self.bn1 = torch.nn.BatchNorm1d(256)
+            self.layer2 = nn.Linear(256, 256, bias=False)
+            self.bn2 = torch.nn.BatchNorm1d(256)
+            self.layer3 = nn.Linear(256, 1)
 
     def forward(self, state):
-        state = self.pre_input(state)
-        state = F.leaky_relu((self.layer1(state)))
-        state = F.leaky_relu((self.layer2(state)))
-        value = self.layer3(state)
+        if not self.batch_norm:
+            state = self.pre_input(state)
+            state = F.leaky_relu((self.layer1(state)))
+            state = F.leaky_relu((self.layer2(state)))
+            value = self.layer3(state)
+        else:
+            state = self.pre_input(state)
+            state = F.leaky_relu(self.bn1(self.layer1(state)))
+            state = F.leaky_relu(self.bn2(self.layer2(state)))
+            value = self.layer3(state)
         return value
 
     @staticmethod
