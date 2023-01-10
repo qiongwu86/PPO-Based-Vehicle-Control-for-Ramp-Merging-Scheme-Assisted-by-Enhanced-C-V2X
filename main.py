@@ -1,28 +1,4 @@
-# from matplotlib import pyplot as plt
-# from matplotlib.animation import FuncAnimation
-# from functools import partial
-# import math
-#
-# fig, ax = plt.subplots()
-# rect = plt.Rectangle((0, 0), 2, 1)
-# plt.xlim(-10, 10)
-# plt.ylim(-10, 10)
-# plt.axis('equal')
-# ax.add_patch(rect)
-# # rect.set
-#
-#
-# def update(frame_num, obj_list=None):
-#     for obj in obj_list:
-#         obj.set_xy((0.1*frame_num, 0.1*frame_num))
-#         obj.set_angle(frame_num*10*math.pi/180)
-#
-#
-# anime = FuncAnimation(fig=fig, func=partial(update, obj_list=[rect, ]), frames=50, interval=1000/60)
-#
-# anime.save('rect.gif')
 import matplotlib.pyplot as plt
-
 import engine
 import environment
 import torch
@@ -31,8 +7,9 @@ CACC_ENG = engine.cacc_engine()
 RL_ENG = engine.rl_engine(9)
 env = environment.Environment(CACC_ENG, RL_ENG)
 
-#
-# RL_ENG.actor.load_state_dict(torch.load("./model_param/660_actor_param.pkl"))
+# load param
+# RL_ENG.actor.load_state_dict(torch.load("./model_param/500_actor_param.pkl"))
+# RL_ENG.critic.load_state_dict(torch.load("./model_param/500_critic_param.pkl"))
 # env.draw_trace(str(2))
 
 
@@ -62,8 +39,3 @@ for i in range(10000):
         plt.plot(critic_loss)
         plt.savefig("./loss_plot/" + str(i) + "_critic_loss.jpg")
         plt.close()
-#
-#
-#
-#
-#

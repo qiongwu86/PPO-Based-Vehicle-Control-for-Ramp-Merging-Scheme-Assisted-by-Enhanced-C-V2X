@@ -1,2 +1,5 @@
 venv/
 .idea/
+model_param/*
+gifs/*
+loss_plot/*

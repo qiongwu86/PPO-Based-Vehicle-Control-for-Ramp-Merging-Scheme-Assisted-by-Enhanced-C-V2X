@@ -40,10 +40,10 @@ class rl_engine:
         self.buffer = buffer.MainBuffer()
 
         self.actor = Actor(state_dim)
-        self.actor_opt = torch.optim.Adam(self.actor.parameters(), lr=1e-4)
+        self.actor_opt = torch.optim.Adam(self.actor.parameters(), lr=1e-3)
 
         self.critic = Critic(state_dim)
-        self.critic_opt = torch.optim.Adam(self.critic.parameters(), lr=1e-4)
+        self.critic_opt = torch.optim.Adam(self.critic.parameters(), lr=5e-4)
 
         self.action_scale = torch.tensor([vehicle.Vehicle.acc_max - vehicle.Vehicle.acc_min,
                                           vehicle.Vehicle.steer_max - vehicle.Vehicle.steer_min])
@@ -75,9 +75,6 @@ class rl_engine:
     def _rescale_action(self, action):
         return (action - self.action_mean) / self.action_scale + 0.5
 
-    # def add_episode_data(self, episode_data):
-    #     pass
-
     def train(self, times_per_buffer, batch_size):
         print("training...")
         actor_losses = []
@@ -105,6 +102,44 @@ class rl_engine:
 
             ratios = torch.exp(l_p - l_p_old)
             adv = torch.detach(d_r - current_state_value)
+            surr1 = ratios * adv
+            surr2 = torch.clamp(ratios, 1-self.clip, 1+self.clip) * adv
+            actor_loss = -torch.min(surr1, surr2).mean()
+            self.actor_opt.zero_grad()
+            actor_loss.backward()
+            self.actor_opt.step()
+            actor_losses.append(actor_loss.detach())
+        print("\n train complete")
+        return np.mean(actor_losses), np.mean(critic_losses)
+
+    def train2(self, times_per_buffer, batch_size):
+        print("training...")
+        actor_losses = []
+        critic_losses = []
+        for t in range(times_per_buffer):
+            print("\r train {0}/{1}".format(t+1, times_per_buffer), end="")
+            mini_batch = self.buffer.get_mini_batch(batch_size)
+            s = torch.from_numpy(mini_batch[0]).detach()
+            a = self._rescale_action(torch.from_numpy(mini_batch[1]).detach())
+            r = torch.from_numpy(mini_batch[2]).detach()
+            s_ = torch.from_numpy(mini_batch[3]).detach()
+            d_r = torch.from_numpy(mini_batch[4]).detach()
+            l_p_old = torch.from_numpy(mini_batch[5]).detach()
+
+            next_state_value = self.critic(s_)
+            current_state_value = self.critic(s)
+            critic_loss = torch.mean(torch.pow(r + self.buffer.gamma*next_state_value - current_state_value, 2))
+            self.critic_opt.zero_grad()
+            critic_loss.backward()
+            self.critic_opt.step()
+            critic_losses.append(critic_loss.detach())
+
+            alpha, beta = self.actor(s)
+            beta_dist = torch.distributions.Beta(alpha, beta)
+            l_p = beta_dist.log_prob(a).sum(1, keepdim=True)
+
+            ratios = torch.exp(l_p - l_p_old)
+            adv = torch.detach(r + self.buffer.gamma*next_state_value - current_state_value)
             surr1 = ratios * adv
             surr2 = torch.clamp(ratios, 1-self.clip, 1+self.clip) * adv
             actor_loss = -torch.min(surr1, surr2).mean()
