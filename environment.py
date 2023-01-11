@@ -120,7 +120,7 @@ class Environment:
     @staticmethod
     def _calculate_reward(vehicle, state, action, state_):
         if vehicle.coll_with_edge() or vehicle.coll_with_other():
-            return np.array([-100.0 + 0.5*state_[0]]), True
+            return np.array([-100.0 + 0.25*state_[0] - 5*(abs(state_[1]) + abs(state_[2]))]), True
         if vehicle.x > 0:
             return np.array([150.0]), True
         last_body_angle = state[4]
@@ -129,17 +129,17 @@ class Environment:
         foll_dist, foll_delta_speed = state_[7: 9]
 
         x_reward = -abs(x / 175)
-        y_reward = -(1 - abs(x/175)) * (abs(y_rear) + abs(y_front)) * 0.125
-        speed_reward = math.exp(-abs(speed - Vehicle.expect_speed)) - 1
+        y_reward = -(1 - abs(x/175)) * (abs(y_rear) + abs(y_front)) * 0.25
+        speed_reward = (math.exp(-abs(speed - Vehicle.expect_speed)) - 1) * 0.5
         body_angle_reward = -pow(body_angle / math.pi, 2) \
                             - abs(body_angle - last_body_angle) * 5
 
         expect_dist_with_prev = Vehicle.headway_time * vehicle.calculate_longitude_speed()
-        prev_reward = np.clip(math.exp(prev_dist - expect_dist_with_prev) - 1, -1, 0) + \
+        prev_reward = 1.5*np.clip(math.exp(prev_dist - expect_dist_with_prev) - 1, -1, 0) + \
                       math.exp(-abs(prev_delta_speed)) - 1.0
 
         expect_dist_with_foll = Vehicle.headway_time * (vehicle.calculate_longitude_speed() - foll_delta_speed)
-        foll_reward = np.clip(math.exp(foll_dist - expect_dist_with_foll) - 1, -1, 0) + \
+        foll_reward = 1.5*np.clip(math.exp(foll_dist - expect_dist_with_foll) - 1, -1, 0) + \
                       math.exp(-abs(foll_delta_speed)) - 1.0
 
         action_reward = -pow(action[0] / (0.5*(Vehicle.acc_max - Vehicle.acc_min)), 2) \
