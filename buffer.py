@@ -26,7 +26,7 @@ class MainBuffer:
         self.ptr += episode_size
 
     def full(self):
-        return self.ptr > 400
+        return self.ptr > 8000
 
     def get_mini_batch(self, batch_size):
         sample_index = random.sample(range(self.ptr), batch_size)

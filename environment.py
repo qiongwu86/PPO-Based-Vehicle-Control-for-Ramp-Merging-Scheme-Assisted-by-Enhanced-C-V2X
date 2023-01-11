@@ -120,9 +120,10 @@ class Environment:
     @staticmethod
     def _calculate_reward(vehicle, state, action, state_):
         if vehicle.coll_with_edge() or vehicle.coll_with_other():
-            return np.array([-100.0 + 0.25*state_[0] - 5*(abs(state_[1]) + abs(state_[2]))]), True
+            return np.array([-100.0 + 0.25*state_[0] - (1 - abs(state_[0]/175))*10*(abs(state_[1]) + abs(state_[2]))]), \
+                True
         if vehicle.x > 0:
-            return np.array([150.0]), True
+            return np.array([200.0]), True
         last_body_angle = state[4]
         x, y_rear, y_front, speed, body_angle = state_[0: 5]
         prev_dist, prev_delta_speed = state_[5: 7]
@@ -130,7 +131,7 @@ class Environment:
 
         x_reward = -abs(x / 175)
         y_reward = -(1 - abs(x/175)) * (abs(y_rear) + abs(y_front)) * 0.25
-        speed_reward = (math.exp(-abs(speed - Vehicle.expect_speed)) - 1) * 0.5
+        speed_reward = (math.exp(-abs(speed - Vehicle.expect_speed)) - 1) * 0.25
         body_angle_reward = -pow(body_angle / math.pi, 2) \
                             - abs(body_angle - last_body_angle) * 5
 

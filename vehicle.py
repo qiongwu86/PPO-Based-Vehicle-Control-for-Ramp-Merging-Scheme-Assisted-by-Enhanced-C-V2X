@@ -125,13 +125,13 @@ class Vehicle:
                           self.body_angle)
 
             if prev is None:
-                prev_state = (Vehicle.sensing_distance, 0.0)
+                prev_state = (self.calculate_longitude_speed()*Vehicle.headway_time, 0.0)
             else:
                 prev_state = (prev_proj - self_proj,
                               prev.calculate_longitude_speed() - self.calculate_longitude_speed())
 
             if foll is None:
-                foll_state = (Vehicle.sensing_distance, 0.0)
+                foll_state = (self.calculate_longitude_speed()*Vehicle.headway_time, 0.0)
             else:
                 foll_state = (self_proj - foll_proj,
                               self.calculate_longitude_speed() - foll.calculate_longitude_speed())
