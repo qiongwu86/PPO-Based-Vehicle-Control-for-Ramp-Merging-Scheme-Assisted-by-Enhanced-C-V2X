@@ -22,7 +22,7 @@ class Vehicle:
 
     all_vehicle = list()
     acc_max = 2.0
-    acc_min = -3.0
+    acc_min = -5.0
     steer_max = 15*math.pi/180
     steer_min = -15*math.pi/180
     headway_time = 1.0

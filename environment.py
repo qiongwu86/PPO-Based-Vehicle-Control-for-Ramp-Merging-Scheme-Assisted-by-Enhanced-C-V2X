@@ -31,6 +31,7 @@ class Environment:
         self.rl_engine.buffer.clear()
 
         print("collecting data for train...")
+        total_episodes = 0
         while not self.rl_engine.buffer.full():
             self._env_init()
 
@@ -88,9 +89,10 @@ class Environment:
                             # for v_ in Vehicle.all_vehicle:
                             #     if v_.x > max_x:
                             #         max_x = v_.x
+                            total_episodes += 1
                             self.rl_engine.buffer.add_episode_data(v.buffer.calculate_return())
-                            print("\r buffer size = {0}, total {1} vehicles now".
-                                  format(self.rl_engine.buffer.ptr, len(Vehicle.all_vehicle)), end="")
+                            print("\r buffer size = {0:5.0f}, total {1:3.0f} episodes.".
+                                  format(self.rl_engine.buffer.ptr, total_episodes), end="")
                             # print(", max x:", max_x, end="")
 
                 del_vehicles = []
@@ -119,9 +121,10 @@ class Environment:
 
     @staticmethod
     def _calculate_reward(vehicle, state, action, state_):
-        if vehicle.coll_with_edge() or vehicle.coll_with_other():
-            return np.array([-100.0 + 0.25*state_[0] - (1 - abs(state_[0]/175))*10*(abs(state_[1]) + abs(state_[2]))]), \
-                True
+        if vehicle.coll_with_edge() or vehicle.coll_with_other() or (state_[3] <= 5.0):
+            return np.array(
+                [-100.0 + 0.5 * state_[0] - (1 - abs(state_[0] / 175)) * 5 * (abs(state_[1]) + abs(state_[2]))]), \
+                   True
         if vehicle.x > 0:
             return np.array([200.0]), True
         last_body_angle = state[4]
@@ -129,28 +132,32 @@ class Environment:
         prev_dist, prev_delta_speed = state_[5: 7]
         foll_dist, foll_delta_speed = state_[7: 9]
 
-        x_reward = -abs(x / 175)
-        y_reward = -(1 - abs(x/175)) * (abs(y_rear) + abs(y_front)) * 0.25
-        speed_reward = (math.exp(-abs(speed - Vehicle.expect_speed)) - 1) * 0.25
-        body_angle_reward = -pow(body_angle / math.pi, 2) \
+        x_reward = -abs(x / 175)*0
+        y_reward = -(1 - abs(x / 175)) * \
+                   ((pow(y_rear / 4.625, 2) if y_rear < 0 else pow(y_rear / 0.875, 2))
+                    + (pow(y_front / 4.625, 2) if y_front < 0 else pow(y_front / 0.875, 2)))
+        speed_reward = (math.exp(-abs(speed - Vehicle.expect_speed)) - 1) * 0.1
+        body_angle_reward = -3 * pow(body_angle / math.pi, 2) \
                             - abs(body_angle - last_body_angle) * 5
 
-        expect_dist_with_prev = Vehicle.headway_time * vehicle.calculate_longitude_speed()
-        prev_reward = 1.5*np.clip(math.exp(prev_dist - expect_dist_with_prev) - 1, -1, 0) + \
-                      math.exp(-abs(prev_delta_speed)) - 1.0
+        prev_dist_diff = prev_dist - Vehicle.headway_time * vehicle.calculate_longitude_speed()
+        prev_reward = 5 * (np.clip(-pow(prev_dist_diff / 5, 2), -1, 0)
+                             if prev_dist_diff < 0
+                             else 0) + (math.exp(-abs(prev_delta_speed)) - 1.0) * 0.1
 
-        expect_dist_with_foll = Vehicle.headway_time * (vehicle.calculate_longitude_speed() - foll_delta_speed)
-        foll_reward = 1.5*np.clip(math.exp(foll_dist - expect_dist_with_foll) - 1, -1, 0) + \
-                      math.exp(-abs(foll_delta_speed)) - 1.0
+        foll_dist_diff = foll_dist - Vehicle.headway_time * (vehicle.calculate_longitude_speed() - foll_delta_speed)
+        foll_reward = 5 * (np.clip(-pow(foll_dist_diff / 5, 2), -1, 0)
+                             if foll_dist_diff < 0
+                             else 0) + (math.exp(-abs(foll_delta_speed)) - 1.0) * 0.1
 
-        action_reward = -pow(action[0] / (0.5*(Vehicle.acc_max - Vehicle.acc_min)), 2) \
-                        - pow(action[1] / (0.5*(Vehicle.steer_max-Vehicle.steer_min)), 2)
+        action_reward = -pow(action[0] / (0.5 * (Vehicle.acc_max - Vehicle.acc_min)), 2) \
+                        - pow(action[1] / (0.5 * (Vehicle.steer_max - Vehicle.steer_min)), 2)
 
         return np.array([(x_reward + y_reward +
                           speed_reward + body_angle_reward +
                           prev_reward + foll_reward +
-                          action_reward*2) / 6], dtype=np.float32), \
-            False
+                          action_reward * 2) / 6], dtype=np.float32), \
+               False
 
     def draw_trace(self, name):
         self._env_init()
@@ -161,13 +168,13 @@ class Environment:
         for i in range(main_veh_num):
             v = Vehicle(i, Mode.MAIN_CACC)
             v.x = -(375 + start_point)
-            start_point += 200 / (main_veh_num-1) + random.uniform(-3, 3)
+            start_point += 200 / (main_veh_num - 1) + random.uniform(-3, 3)
 
         start_point = random.uniform(0, 5)
         for i in range(main_veh_num, main_veh_num + merge_veh_num):
             v = Vehicle(i, Mode.MERGE_CACC)
             v.x = -(375 + start_point)
-            start_point += 200 / (merge_veh_num-1) + random.uniform(-3, 3)
+            start_point += 200 / (merge_veh_num - 1) + random.uniform(-3, 3)
 
         all_data = list()
         while len(Vehicle.all_vehicle) != 0:
@@ -224,7 +231,7 @@ class Environment:
 
         anime = FuncAnimation(fig=fig, func=partial(utilities.update,
                                                     obj_dict=all_rect,
-                                                    obj_data=all_data), frames=len(all_data),  interval=1000 / 60)
+                                                    obj_data=all_data), frames=len(all_data), interval=1000 / 60)
 
         anime.save("./gifs/demo_" + name + ".gif")
         plt.close()

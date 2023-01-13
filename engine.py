@@ -39,11 +39,11 @@ class rl_engine:
     def __init__(self, state_dim):
         self.buffer = buffer.MainBuffer()
 
-        self.actor = Actor(state_dim, True)
-        self.actor_opt = torch.optim.Adam(self.actor.parameters(), lr=1e-5)
+        self.actor = Actor(state_dim, False)
+        self.actor_opt = torch.optim.Adam(self.actor.parameters(), lr=5e-6)
 
-        self.critic = Critic(state_dim, True)
-        self.critic_opt = torch.optim.Adam(self.critic.parameters(), lr=1e-5)
+        self.critic = Critic(state_dim, False)
+        self.critic_opt = torch.optim.Adam(self.critic.parameters(), lr=5e-6)
 
         self.action_scale = torch.tensor([vehicle.Vehicle.acc_max - vehicle.Vehicle.acc_min,
                                           vehicle.Vehicle.steer_max - vehicle.Vehicle.steer_min])
