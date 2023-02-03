@@ -123,32 +123,35 @@ class Environment:
     def _calculate_reward(vehicle, state, action, state_):
         if vehicle.coll_with_edge() or vehicle.coll_with_other() or (state_[3] <= 5.0):
             return np.array(
-                [-100.0 + 0.5 * state_[0] - (1 - abs(state_[0] / 175)) * 5 * (abs(state_[1]) + abs(state_[2]))]), \
-                   True
+                [0.0 +
+                 1.0 * state_[0] -
+                 (1) * 5 *
+                 ((abs(state_[1] / 4.625) if state_[1] < 0 else abs(state_[1] / 0.875)) +
+                  (abs(state_[2] / 4.625) if state_[2] < 0 else abs(state_[2] / 0.875)))]), True
         if vehicle.x > 0:
-            return np.array([200.0]), True
+            return np.array([300.0]), True
         last_body_angle = state[4]
         x, y_rear, y_front, speed, body_angle = state_[0: 5]
         prev_dist, prev_delta_speed = state_[5: 7]
         foll_dist, foll_delta_speed = state_[7: 9]
 
-        x_reward = -abs(x / 175)*0
+        x_reward = -abs(x / 175) * 0
         y_reward = -(1 - abs(x / 175)) * \
                    ((pow(y_rear / 4.625, 2) if y_rear < 0 else pow(y_rear / 0.875, 2))
                     + (pow(y_front / 4.625, 2) if y_front < 0 else pow(y_front / 0.875, 2)))
         speed_reward = (math.exp(-abs(speed - Vehicle.expect_speed)) - 1) * 0.1
         body_angle_reward = -3 * pow(body_angle / math.pi, 2) \
-                            - abs(body_angle - last_body_angle) * 5
+                            - abs(body_angle - last_body_angle) * 7
 
         prev_dist_diff = prev_dist - Vehicle.headway_time * vehicle.calculate_longitude_speed()
         prev_reward = 5 * (np.clip(-pow(prev_dist_diff / 5, 2), -1, 0)
-                             if prev_dist_diff < 0
-                             else 0) + (math.exp(-abs(prev_delta_speed)) - 1.0) * 0.1
+                           if prev_dist_diff < 0
+                           else (np.exp(-prev_dist_diff) - 1)) + (math.exp(-abs(prev_delta_speed)) - 1.0) * 0.1
 
         foll_dist_diff = foll_dist - Vehicle.headway_time * (vehicle.calculate_longitude_speed() - foll_delta_speed)
         foll_reward = 5 * (np.clip(-pow(foll_dist_diff / 5, 2), -1, 0)
-                             if foll_dist_diff < 0
-                             else 0) + (math.exp(-abs(foll_delta_speed)) - 1.0) * 0.1
+                           if foll_dist_diff < 0
+                           else (np.exp(-foll_dist_diff) - 1)) + (math.exp(-abs(foll_delta_speed)) - 1.0) * 0.1
 
         action_reward = -pow(action[0] / (0.5 * (Vehicle.acc_max - Vehicle.acc_min)), 2) \
                         - pow(action[1] / (0.5 * (Vehicle.steer_max - Vehicle.steer_min)), 2)

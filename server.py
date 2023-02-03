@@ -117,34 +117,34 @@ class Engine:
             conn.send(send_byte)
             print("[send] send action({0}, {1}) to {2}".format(action[0], action[1], veh_id))
 
-        fig = plt.figure()
-        ax = plt.axes()
-        ax.set_aspect(1)
-
-        plt.xlim(-575, -175)
-        plt.ylim(-60, 10)
-
-        rect = plt.Rectangle((-575, -60), 675, 100, color='g')
-        ax.add_patch(rect)
-
-        utilities.draw_road()
-
-        all_rect = dict()
-        for veh_id in self.all_data:
-            all_rect[veh_id] = plt.Rectangle((self.all_data[veh_id][0][0], self.all_data[veh_id][0][1]), 4.5, 2.0, color='r')
-            ax.add_patch(all_rect[veh_id])
-
-        frames_num = 0
-        for _ in self.all_data:
-            if len(self.all_data[_]) > frames_num:
-                frames_num = len(self.all_data[_])
-
-        anime = FuncAnimation(fig=fig, func=partial(utilities.update_ns3,
-                                                    obj_dict=all_rect,
-                                                    obj_data=self.all_data), frames=frames_num,  interval=1000 / 60)
-
-        anime.save("./gifs/demo_" + "ns3" + ".gif")
-        plt.close()
+        # fig = plt.figure()
+        # ax = plt.axes()
+        # ax.set_aspect(1)
+        #
+        # plt.xlim(-575, -175)
+        # plt.ylim(-60, 10)
+        #
+        # rect = plt.Rectangle((-575, -60), 675, 100, color='g')
+        # ax.add_patch(rect)
+        #
+        # utilities.draw_road()
+        #
+        # all_rect = dict()
+        # for veh_id in self.all_data:
+        #     all_rect[veh_id] = plt.Rectangle((self.all_data[veh_id][0][0], self.all_data[veh_id][0][1]), 4.5, 2.0, color='r')
+        #     ax.add_patch(all_rect[veh_id])
+        #
+        # frames_num = 0
+        # for _ in self.all_data:
+        #     if len(self.all_data[_]) > frames_num:
+        #         frames_num = len(self.all_data[_])
+        #
+        # anime = FuncAnimation(fig=fig, func=partial(utilities.update_ns3,
+        #                                             obj_dict=all_rect,
+        #                                             obj_data=self.all_data), frames=frames_num,  interval=1000 / 60)
+        #
+        # anime.save("./gifs/demo_" + "ns3" + ".gif")
+        # plt.close()
 
 e = Engine()
 e.server_start()

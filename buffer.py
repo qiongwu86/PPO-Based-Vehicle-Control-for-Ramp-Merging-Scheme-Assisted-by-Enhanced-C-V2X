@@ -16,6 +16,8 @@ class MainBuffer:
         self.ptr = 0
 
     def add_episode_data(self, episode_data):
+        if self.full():
+            return
         episode_size = len(episode_data[0])
         self.state[self.ptr: self.ptr + episode_size] += episode_data[0]
         self.action[self.ptr: self.ptr + episode_size] += episode_data[1]
@@ -68,7 +70,6 @@ class SubBuffer:
             self.state_[self.ptr] += s_
             self.log_prob[self.ptr] += log_prob
             self.ptr += 1
-
         else:
             print("sub buffer is full")
             exit(0)

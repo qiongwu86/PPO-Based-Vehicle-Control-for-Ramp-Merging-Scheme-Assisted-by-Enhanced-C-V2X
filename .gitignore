@@ -1,5 +1,3 @@
-venv/
-.idea/
-model_param/*
-gifs/*
-loss_plot/*
+venv
+.idea
+__pycache__

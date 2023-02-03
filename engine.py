@@ -40,10 +40,10 @@ class rl_engine:
         self.buffer = buffer.MainBuffer()
 
         self.actor = Actor(state_dim, False)
-        self.actor_opt = torch.optim.Adam(self.actor.parameters(), lr=5e-6)
+        self.actor_opt = torch.optim.Adam(self.actor.parameters(), lr=5e-5)
 
         self.critic = Critic(state_dim, False)
-        self.critic_opt = torch.optim.Adam(self.critic.parameters(), lr=5e-6)
+        self.critic_opt = torch.optim.Adam(self.critic.parameters(), lr=5e-5)
 
         self.action_scale = torch.tensor([vehicle.Vehicle.acc_max - vehicle.Vehicle.acc_min,
                                           vehicle.Vehicle.steer_max - vehicle.Vehicle.steer_min])
@@ -95,11 +95,22 @@ class rl_engine:
             critic_loss.backward()
             self.critic_opt.step()
             critic_losses.append(critic_loss.detach())
-            # actor
+
+        # actor
+        for t in range(times_per_buffer):
+            print("\r train {0}/{1}".format(t + 1, times_per_buffer), end="")
+            mini_batch = self.buffer.get_mini_batch(batch_size)
+            s = torch.from_numpy(mini_batch[0]).detach()
+            a = self._rescale_action(torch.from_numpy(mini_batch[1]).detach())
+            r = torch.from_numpy(mini_batch[2]).detach()
+            s_ = torch.from_numpy(mini_batch[3]).detach()
+            d_r = torch.from_numpy(mini_batch[4]).detach()
+            l_p_old = torch.from_numpy(mini_batch[5]).detach()
+
             alpha, beta = self.actor(s)
             beta_dist = torch.distributions.Beta(alpha, beta)
             l_p = beta_dist.log_prob(a).sum(1, keepdim=True)
-
+            current_state_value = self.critic(s).detach()
             ratios = torch.exp(l_p - l_p_old)
             adv = torch.detach(d_r - current_state_value)
             surr1 = ratios * adv
@@ -218,8 +229,9 @@ class Actor(nn.Module):
 
     @staticmethod
     def pre_input(state):
-        state /= torch.tensor([175, 3.75, 3.75, 20, 1, 20, 1, 20, 1])
-        return state
+        state_copy = state.clone().detach()
+        state_copy /= torch.tensor([175, 3.75, 3.75, 20, 1, 20, 1, 20, 1])
+        return state_copy
 
 
 class Critic(nn.Module):
@@ -252,6 +264,7 @@ class Critic(nn.Module):
 
     @staticmethod
     def pre_input(state):
-        state /= torch.tensor([175, 3.75, 3.75, 20, 1, 20, 1, 20, 1])
-        return state
+        state_copy = state.clone().detach()
+        state_copy /= torch.tensor([175, 3.75, 3.75, 20, 1, 20, 1, 20, 1])
+        return state_copy
 

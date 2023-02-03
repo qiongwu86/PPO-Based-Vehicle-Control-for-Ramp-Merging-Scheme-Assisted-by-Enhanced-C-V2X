@@ -75,6 +75,9 @@ class Vehicle:
         if self.coll_with_edge() or self.coll_with_other():
             return True
 
+        if self.speed < 5.0:
+            return True
+
     def coll_with_edge(self):
         four_points = utilities.get_four_points(self.x, self.y, self.body_angle)
         for point in four_points:
@@ -100,6 +103,7 @@ class Vehicle:
 
     def get_state(self):
         self_proj = self.get_proj()
+        self_longitude_speed = self.calculate_longitude_speed()
         prev_proj = self_proj+Vehicle.sensing_distance
         foll_proj = self_proj-Vehicle.sensing_distance
         prev = None
@@ -125,16 +129,16 @@ class Vehicle:
                           self.body_angle)
 
             if prev is None:
-                prev_state = (self.calculate_longitude_speed()*Vehicle.headway_time, 0.0)
+                prev_state = (self_longitude_speed*Vehicle.headway_time, 0.0)
             else:
                 prev_state = (prev_proj - self_proj,
-                              prev.calculate_longitude_speed() - self.calculate_longitude_speed())
+                              prev.calculate_longitude_speed() - self_longitude_speed)
 
             if foll is None:
-                foll_state = (self.calculate_longitude_speed()*Vehicle.headway_time, 0.0)
+                foll_state = (self_longitude_speed*Vehicle.headway_time, 0.0)
             else:
                 foll_state = (self_proj - foll_proj,
-                              self.calculate_longitude_speed() - foll.calculate_longitude_speed())
+                              self_longitude_speed - foll.calculate_longitude_speed())
 
             return np.array(self_state + prev_state + foll_state, dtype=np.float32)
 
