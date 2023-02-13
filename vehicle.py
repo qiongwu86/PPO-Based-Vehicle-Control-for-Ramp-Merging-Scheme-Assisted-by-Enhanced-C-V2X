@@ -21,13 +21,13 @@ class Mode(enum.Enum):
 class Vehicle:
 
     all_vehicle = list()
-    acc_max = 2.0
-    acc_min = -5.0
+    acc_max = 3.0
+    acc_min = -3.0
     steer_max = 15*math.pi/180
     steer_min = -15*math.pi/180
     headway_time = 1.0
     sensing_distance = 100.0
-    expect_speed = 20.0
+    expect_speed = 23.0
     init_speed = 15.0
     speed_max = 25
 

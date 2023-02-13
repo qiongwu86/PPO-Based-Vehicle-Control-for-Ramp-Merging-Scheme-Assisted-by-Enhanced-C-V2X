@@ -59,6 +59,17 @@ def update(frame_num, obj_dict, obj_data):
         obj_dict[v_id].set_angle(body_angle*180/math.pi)
 
 
+def update_ns3(frame_num, obj_dict, obj_data):
+    # current_data = obj_data[frame_num]
+    for veh_id in obj_dict:
+        if frame_num < len(obj_data[veh_id]):
+            x, y, speed, body_angle = obj_data[veh_id][frame_num]
+            x, y = get_central(x, y, body_angle)
+            # print(body_angle, mode)
+            obj_dict[veh_id].set_xy((x, y))
+            obj_dict[veh_id].set_angle(body_angle*180/math.pi)
+
+
 def get_central(x, y, body_angle):
     return x+math.sin(body_angle), y-math.cos(body_angle)
 

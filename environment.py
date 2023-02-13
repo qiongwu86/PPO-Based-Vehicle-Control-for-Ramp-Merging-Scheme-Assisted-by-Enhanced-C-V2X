@@ -2,6 +2,7 @@ import math
 import numpy as np
 
 import utilities
+import vehicle
 from vehicle import Vehicle, Mode
 import random
 from matplotlib import pyplot as plt
@@ -35,7 +36,8 @@ class Environment:
         while not self.rl_engine.buffer.full():
             self._env_init()
 
-            main_veh_num, merge_veh_num = random.sample(Environment.vehicle_random_num, 2)
+            main_veh_num = random.sample(Environment.vehicle_random_num, 1)[0]
+            merge_veh_num = random.sample(Environment.vehicle_random_num, 1)[0]
 
             start_point = random.uniform(0, 5)
             for i in range(main_veh_num):
@@ -107,6 +109,81 @@ class Environment:
 
         print("\n buffer is full")
 
+    def step_for_average_reward(self, episodes):
+        self.rl_engine.buffer.clear()
+        total_veh = 0
+        success_veh = 0
+
+        print("collecting data for calculate average_reward...")
+        for eps in range(episodes):
+            self._env_init()
+
+            main_veh_num = random.sample(Environment.vehicle_random_num, 1)[0]
+            merge_veh_num = random.sample(Environment.vehicle_random_num, 1)[0]
+            total_veh += merge_veh_num
+
+            start_point = random.uniform(0, 5)
+            for i in range(main_veh_num):
+                v = Vehicle(i, Mode.MAIN_CACC)
+                v.x = -(375 + start_point)
+                start_point += 200 / (main_veh_num - 1) + random.uniform(-3, 3)
+
+            start_point = random.uniform(0, 5)
+            for i in range(main_veh_num, main_veh_num + merge_veh_num):
+                v = Vehicle(i, Mode.MERGE_CACC)
+                v.x = -(375 + start_point)
+                start_point += 200 / (merge_veh_num - 1) + random.uniform(-3, 3)
+
+            while len(Vehicle.all_vehicle) != 0:
+                vehicle_to_state = dict()
+                for v in Vehicle.all_vehicle:
+                    vehicle_to_state[v] = v.get_state()
+
+                vehicle_to_action = dict()
+                vehicle_to_log_porb = dict()
+                for v in Vehicle.all_vehicle:
+                    if v.mode is Mode.MERGE_RL:
+                        vehicle_to_action[v], vehicle_to_log_porb[v] \
+                            = self.rl_engine.generate_action(vehicle_to_state[v])
+                    else:
+                        vehicle_to_action[v] = self.cacc_engine.generate_action(vehicle_to_state[v])
+
+                for v in Vehicle.all_vehicle:
+                    v.input_action(vehicle_to_action[v])
+
+                vehicle_to_state_ = dict()
+                for v in Vehicle.all_vehicle:
+                    if v.mode is Mode.MERGE_RL:
+                        vehicle_to_state_[v] = v.get_state()
+
+                vehicle_to_reward = dict()
+                for v in Vehicle.all_vehicle:
+                    if v.mode is Mode.MERGE_RL:
+                        vehicle_to_reward[v], done = self._calculate_reward(v,
+                                                                            vehicle_to_state[v],
+                                                                            vehicle_to_action[v],
+                                                                            vehicle_to_state_[v])
+                        if vehicle_to_reward[v] == 300.0:
+                            success_veh += 1
+                        v.buffer.input((vehicle_to_state[v],
+                                        vehicle_to_action[v],
+                                        vehicle_to_reward[v],
+                                        vehicle_to_state_[v],
+                                        vehicle_to_log_porb[v]))
+                        if done:
+                            self.rl_engine.buffer.add_episode_data(v.buffer.calculate_return())
+
+                del_vehicles = []
+                for v in Vehicle.all_vehicle:
+                    if v.check_and_if_delete_self():
+                        del_vehicles.append(v)
+                for v in del_vehicles:
+                    Vehicle.all_vehicle.remove(v)
+
+                for v in Vehicle.all_vehicle:
+                    v.change_mode()
+        return np.mean(self.rl_engine.buffer.reward[:self.rl_engine.buffer.ptr, 0]), success_veh/total_veh
+
     def _add_new(self):
         self.main_road_spawn_count -= 1
         self.merge_road_spawn_count -= 1
@@ -160,14 +237,15 @@ class Environment:
                           speed_reward + body_angle_reward +
                           prev_reward + foll_reward +
                           action_reward * 2) / 6], dtype=np.float32), \
-               False
+            False
 
     def draw_trace(self, name):
         self._env_init()
 
-        main_veh_num, merge_veh_num = random.sample(Environment.vehicle_random_num, 2)
+        main_veh_num = random.sample(Environment.vehicle_random_num, 1)[0]
+        merge_veh_num = random.sample(Environment.vehicle_random_num, 1)[0]
 
-        start_point = random.uniform(0, 5)
+        start_point = random.uniform(0, 5) + 200*(1/vehicle.COS_15 - 1)
         for i in range(main_veh_num):
             v = Vehicle(i, Mode.MAIN_CACC)
             v.x = -(375 + start_point)
@@ -217,8 +295,8 @@ class Environment:
         ax = plt.axes()
         ax.set_aspect(1)
 
-        plt.xlim(-175, 0)
-        plt.ylim(-10, 10)
+        plt.xlim(-575, -175)
+        plt.ylim(-60, 10)
 
         rect = plt.Rectangle((-575, -60), 675, 100, color='g')
         ax.add_patch(rect)
