@@ -295,7 +295,7 @@ class Environment:
         ax = plt.axes()
         ax.set_aspect(1)
 
-        plt.xlim(-575, -175)
+        plt.xlim(-175, 0)
         plt.ylim(-60, 10)
 
         rect = plt.Rectangle((-575, -60), 675, 100, color='g')

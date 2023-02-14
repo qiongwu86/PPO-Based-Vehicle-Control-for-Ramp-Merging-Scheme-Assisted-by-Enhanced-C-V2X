@@ -39,8 +39,8 @@ class Engine:
     def __init__(self):
         self.cacc_engine = engine.cacc_engine()
         self.rl_engine = engine.rl_engine(9)
-        self.rl_engine.actor.load_state_dict(torch.load("./model_param/{}_actor_param.pkl".format(2220)))
-        self.rl_engine.critic.load_state_dict(torch.load("./model_param/{}_critic_param.pkl".format(2220)))
+        self.rl_engine.actor.load_state_dict(torch.load("./model_param/{}_actor_param.pkl".format(800)))
+        self.rl_engine.critic.load_state_dict(torch.load("./model_param/{}_critic_param.pkl".format(800)))
         self.rl_engine.prep_eval()
 
         self.current_episode_vehicle_num = 0
@@ -174,8 +174,8 @@ class Engine:
         fig = plt.figure()
         for veh_id in veh_in_merge:
             one_veh_datas = np.array(self.all_data[veh_id])
-            plt.plot(np.arange(start_points[veh_id], end_points[veh_id]+1),
-                     one_veh_datas[start_points[veh_id]: end_points[veh_id]+1, 0])
+            plt.plot(np.arange(start_points[veh_id], end_points[veh_id]),
+                     one_veh_datas[start_points[veh_id]: end_points[veh_id], 0])
         plt.grid()
         plt.title("time-x plot")
         plt.xlabel("time[ms]")
@@ -186,8 +186,8 @@ class Engine:
         fig = plt.figure()
         for veh_id in veh_in_merge:
             one_veh_datas = np.array(self.all_data[veh_id])
-            plt.plot(np.arange(start_points[veh_id], end_points[veh_id]+1),
-                     one_veh_datas[start_points[veh_id]: end_points[veh_id]+1, 1])
+            plt.plot(np.arange(start_points[veh_id], end_points[veh_id]),
+                     one_veh_datas[start_points[veh_id]: end_points[veh_id], 1])
         plt.grid()
         plt.title("time-y plot")
         plt.xlabel("time[ms]")
@@ -198,8 +198,8 @@ class Engine:
         fig = plt.figure()
         for veh_id in veh_in_merge:
             one_veh_datas = np.array(self.all_data[veh_id])
-            plt.plot(np.arange(start_points[veh_id], end_points[veh_id]+1),
-                     one_veh_datas[start_points[veh_id]: end_points[veh_id]+1, 2])
+            plt.plot(np.arange(start_points[veh_id], end_points[veh_id]),
+                     one_veh_datas[start_points[veh_id]: end_points[veh_id], 2])
         plt.grid()
         plt.title("time-speed plot")
         plt.xlabel("time[ms]")
@@ -210,8 +210,8 @@ class Engine:
         fig = plt.figure()
         for veh_id in veh_in_merge:
             one_veh_datas = np.array(self.all_data[veh_id])
-            plt.plot(np.arange(start_points[veh_id], end_points[veh_id]+1),
-                     one_veh_datas[start_points[veh_id]: end_points[veh_id]+1, 3])
+            plt.plot(np.arange(start_points[veh_id], end_points[veh_id]),
+                     one_veh_datas[start_points[veh_id]: end_points[veh_id], 3])
         plt.grid()
         plt.title("time-body angle plot")
         plt.xlabel("time[ms]")
@@ -222,8 +222,8 @@ class Engine:
         fig = plt.figure()
         for veh_id in veh_in_merge:
             one_veh_datas = np.array(self.all_action[veh_id])
-            plt.plot(np.arange(start_points[veh_id], end_points[veh_id]+1),
-                     one_veh_datas[start_points[veh_id]: end_points[veh_id]+1, 0])
+            plt.plot(np.arange(start_points[veh_id], end_points[veh_id]),
+                     one_veh_datas[start_points[veh_id]: end_points[veh_id], 0])
         plt.grid()
         plt.title("time-acc plot")
         plt.xlabel("time[ms]")
@@ -234,8 +234,8 @@ class Engine:
         fig = plt.figure()
         for veh_id in veh_in_merge:
             one_veh_datas = np.array(self.all_action[veh_id])
-            plt.plot(np.arange(start_points[veh_id], end_points[veh_id]+1),
-                     one_veh_datas[start_points[veh_id]: end_points[veh_id]+1, 0])
+            plt.plot(np.arange(start_points[veh_id], end_points[veh_id]),
+                     one_veh_datas[start_points[veh_id]: end_points[veh_id], 1])
         plt.grid()
         plt.title("time-steer plot")
         plt.xlabel("time[ms]")

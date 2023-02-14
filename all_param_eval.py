@@ -12,7 +12,7 @@ env = environment.Environment(CACC_ENG, RL_ENG)
 
 rewards = []
 success_rate = []
-for epc in range(int(6700/20)+1):
+for epc in range(int(800/20)+1):
     RL_ENG.actor.load_state_dict(torch.load("./model_param/{}_actor_param.pkl".format(epc*20)))
     RL_ENG.critic.load_state_dict(torch.load("./model_param/{}_critic_param.pkl".format(epc*20)))
     RL_ENG.prep_eval()
