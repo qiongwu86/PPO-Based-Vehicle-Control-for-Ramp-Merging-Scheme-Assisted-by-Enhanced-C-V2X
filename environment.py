@@ -39,7 +39,7 @@ class Environment:
             main_veh_num = random.sample(Environment.vehicle_random_num, 1)[0]
             merge_veh_num = random.sample(Environment.vehicle_random_num, 1)[0]
 
-            start_point = random.uniform(0, 5)
+            start_point = random.uniform(0, 5) + 200*(1/vehicle.COS_15 - 1)
             for i in range(main_veh_num):
                 v = Vehicle(i, Mode.MAIN_CACC)
                 v.x = -(375 + start_point)
@@ -122,7 +122,7 @@ class Environment:
             merge_veh_num = random.sample(Environment.vehicle_random_num, 1)[0]
             total_veh += merge_veh_num
 
-            start_point = random.uniform(0, 5)
+            start_point = random.uniform(0, 5) + 200*(1/vehicle.COS_15 - 1)
             for i in range(main_veh_num):
                 v = Vehicle(i, Mode.MAIN_CACC)
                 v.x = -(375 + start_point)

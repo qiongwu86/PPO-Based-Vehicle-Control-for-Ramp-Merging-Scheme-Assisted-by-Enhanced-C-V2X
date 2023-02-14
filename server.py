@@ -39,8 +39,8 @@ class Engine:
     def __init__(self):
         self.cacc_engine = engine.cacc_engine()
         self.rl_engine = engine.rl_engine(9)
-        self.rl_engine.actor.load_state_dict(torch.load("./model_param/{}_actor_param.pkl".format(6700)))
-        self.rl_engine.critic.load_state_dict(torch.load("./model_param/{}_critic_param.pkl".format(6700)))
+        self.rl_engine.actor.load_state_dict(torch.load("./model_param/{}_actor_param.pkl".format(2220)))
+        self.rl_engine.critic.load_state_dict(torch.load("./model_param/{}_critic_param.pkl".format(2220)))
         self.rl_engine.prep_eval()
 
         self.current_episode_vehicle_num = 0
@@ -54,7 +54,7 @@ class Engine:
             self.listen_sock.bind(("192.168.138.1", 10889))
             self.listen_sock.listen()
         except Exception as e:
-            print("bind or listen error: [}".format(e))
+            print("bind or listen error: {}".format(e))
 
         print("server start....")
 

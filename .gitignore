@@ -2,3 +2,4 @@ venv
 .idea
 __pycache__
 model_param
+./model_param.zip
