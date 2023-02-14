@@ -33,7 +33,7 @@ class cacc_engine:
         elif spacingErr < 0:
             return v + 0.45 * spacingErr + 0.05 * spacingErr1
         else:
-            return v + 0.000 * spacingErr + 0.05 * spacingErr1
+            return v + 0.005 * spacingErr + 0.05 * spacingErr1
 
 
 class rl_engine:

@@ -8,8 +8,8 @@ RL_ENG = engine.rl_engine(9)
 env = environment.Environment(CACC_ENG, RL_ENG)
 
 # load param
-RL_ENG.actor.load_state_dict(torch.load("./model_param/6700_actor_param.pkl"))
-RL_ENG.critic.load_state_dict(torch.load("./model_param/6700_critic_param.pkl"))
+RL_ENG.actor.load_state_dict(torch.load("./model_param/2220_actor_param.pkl"))
+RL_ENG.critic.load_state_dict(torch.load("./model_param/2220_critic_param.pkl"))
 RL_ENG.prep_eval()
 env.draw_trace(str(6700))
 
