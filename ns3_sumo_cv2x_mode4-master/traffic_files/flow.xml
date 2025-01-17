@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- generated on 2023-07-10 04:00:14.982482 by randomTrips.py UNKNOWN
+<configuration>
+    <net-file value="traffic_files/net.xml"/>
+    <output-trip-file value="traffic_files/flow.xml"/>
+    <trip-attributes value="departPos=&quot;random&quot; departSpeed=&quot;max&quot;"/>
+    <jtrrouter value="True"/>
+    <end value="1.0"/>
+    <flows value="10"/>
+</configuration>
+-->
+
+<routes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/routes_file.xsd">
+    <flow id="0" begin="0" end="1" period="10" from="B2B1" departPos="random" departSpeed="max"/>
+    <flow id="1" begin="0" end="1" period="10" from="A2B2" departPos="random" departSpeed="max"/>
+    <flow id="2" begin="0" end="1" period="10" from="C0B0" departPos="random" departSpeed="max"/>
+    <flow id="3" begin="0" end="1" period="10" from="C1C2" departPos="random" departSpeed="max"/>
+    <flow id="4" begin="0" end="1" period="10" from="B1A1" departPos="random" departSpeed="max"/>
+    <flow id="5" begin="0" end="1" period="10" from="A2A1" departPos="random" departSpeed="max"/>
+    <flow id="6" begin="0" end="1" period="10" from="A0A1" departPos="random" departSpeed="max"/>
+    <flow id="7" begin="0" end="1" period="10" from="B2B1" departPos="random" departSpeed="max"/>
+    <flow id="8" begin="0" end="1" period="10" from="A2A1" departPos="random" departSpeed="max"/>
+    <flow id="9" begin="0" end="1" period="10" from="C1B1" departPos="random" departSpeed="max"/>
+</routes>

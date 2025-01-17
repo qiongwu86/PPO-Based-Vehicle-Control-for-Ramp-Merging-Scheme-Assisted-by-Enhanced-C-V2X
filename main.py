@@ -11,7 +11,6 @@ env = environment.Environment(CACC_ENG, RL_ENG)
 RL_ENG.actor.load_state_dict(torch.load("./model_param/800_actor_param.pkl"))
 RL_ENG.critic.load_state_dict(torch.load("./model_param/800_critic_param.pkl"))
 RL_ENG.prep_eval()
-env.draw_trace(str(800)+"_2")
 
 
 # actor_loss = []
@@ -36,7 +35,6 @@ env.draw_trace(str(800)+"_2")
 #
 #         RL_ENG.prep_eval()
 #         env.draw_trace(str(i))
-#
 #         plt.figure()
 #         plt.plot(actor_loss)
 #         plt.savefig("./loss_plot/" + str(i) + "_actor_loss.jpg")

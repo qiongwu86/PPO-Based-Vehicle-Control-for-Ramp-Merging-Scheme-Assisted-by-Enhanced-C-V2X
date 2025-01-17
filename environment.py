@@ -314,5 +314,6 @@ class Environment:
                                                     obj_dict=all_rect,
                                                     obj_data=all_data), frames=len(all_data), interval=1000 / 60)
 
-        anime.save("./gifs/demo_" + name + ".gif")
+        plt.show()
+        anime.save("./gifs/demo" + name + ".gif")
         plt.close()

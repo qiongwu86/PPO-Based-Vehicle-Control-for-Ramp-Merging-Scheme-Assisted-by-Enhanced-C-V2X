@@ -7,6 +7,8 @@ import socket
 import struct
 import utilities
 import torch
+import csv
+import os
 
 header_template = "IIII"
 # 1: 包类型 0 = first, 1 = end, 2 = action request
@@ -27,6 +29,11 @@ size_cacc_state = struct.calcsize(cacc_state_template)
 cacc_state_start = self_state_end
 cacc_state_end = cacc_state_start + size_cacc_state
 
+cacc_TP_state_template = "dddddd?dd"
+size_cacc_TP_state = struct.calcsize(cacc_TP_state_template)
+cacc_TP_state_start = self_state_end
+cacc_TP_state_end = cacc_TP_state_start + size_cacc_TP_state
+
 rl_state_template = "ddddddddd"
 size_rl_state = struct.calcsize(rl_state_template)
 rl_state_start = self_state_end
@@ -38,6 +45,7 @@ send_template = "dd"
 class Engine:
     def __init__(self):
         self.cacc_engine = engine.cacc_engine()
+        self.cacc_TP_engine = engine.cacc_TP_engine()
         self.rl_engine = engine.rl_engine(9)
         self.rl_engine.actor.load_state_dict(torch.load("./model_param/{}_actor_param.pkl".format(800)))
         self.rl_engine.critic.load_state_dict(torch.load("./model_param/{}_critic_param.pkl".format(800)))
@@ -51,7 +59,7 @@ class Engine:
 
     def server_start(self):
         try:
-            self.listen_sock.bind(("192.168.138.1", 10889))
+            self.listen_sock.bind(("---.---.---.---", 10889))  #your ip addr
             self.listen_sock.listen()
         except Exception as e:
             print("bind or listen error: {}".format(e))
@@ -92,6 +100,7 @@ class Engine:
             recv_pkt = conn.recv(1024)
 
             pkt_type, veh_id, pkt_len, mode = struct.unpack(header_template, recv_pkt[header_start: header_end])
+            print('mode', mode)
             # 包长度
             assert pkt_len == len(recv_pkt)
 
@@ -113,8 +122,14 @@ class Engine:
                 state = struct.unpack(cacc_state_template, recv_pkt[cacc_state_start: cacc_state_end])
                 action = self.cacc_engine.generate_action(state).tolist()
                 send_byte = struct.pack(send_template, *action)
-
             else:
+                # print(f"[debug] Received raw packet length: {len(recv_pkt)}")
+                # print(f"[debug] Raw packet content: {recv_pkt.hex()}")
+                ## cacc_TP
+                # state = struct.unpack(cacc_TP_state_template, recv_pkt[cacc_TP_state_start: cacc_TP_state_end])
+                # action = self.cacc_TP_engine.generate_action(state, veh_id).tolist()
+                # print('action', action)
+                # send_byte = struct.pack(send_template, *action)
                 state = struct.unpack(rl_state_template, recv_pkt[rl_state_start: rl_state_end])
                 action = self.rl_engine.generate_action_for_test(np.array(state, dtype=np.float32)).tolist()
                 send_byte = struct.pack(send_template, *action)
@@ -123,34 +138,35 @@ class Engine:
             conn.send(send_byte)
             print("[send] send action({0}, {1}) to {2}".format(action[0], action[1], veh_id))
 
-        fig = plt.figure()
-        ax = plt.axes()
-        ax.set_aspect(1)
-
-        plt.xlim(-175, 0)
-        plt.ylim(-60, 10)
-
-        rect = plt.Rectangle((-575, -60), 675, 100, color='g')
-        ax.add_patch(rect)
-
-        utilities.draw_road()
-
-        all_rect = dict()
-        for veh_id in self.all_data:
-            all_rect[veh_id] = plt.Rectangle((self.all_data[veh_id][0][0], self.all_data[veh_id][0][1]), 4.5, 2.0, color='r')
-            ax.add_patch(all_rect[veh_id])
-
-        frames_num = 0
-        for _ in self.all_data:
-            if len(self.all_data[_]) > frames_num:
-                frames_num = len(self.all_data[_])
-
-        anime = FuncAnimation(fig=fig, func=partial(utilities.update_ns3,
-                                                    obj_dict=all_rect,
-                                                    obj_data=self.all_data), frames=frames_num,  interval=1000 / 60)
-
-        anime.save("./gifs/demo_" + "ns3_rl" + ".gif")
-        plt.close()
+        self.save_vehicle_data(veh_in_merge)
+        # fig = plt.figure()
+        # ax = plt.axes()
+        # ax.set_aspect(1)
+        #
+        # plt.xlim(-175, 0)
+        # plt.ylim(-60, 10)
+        #
+        # rect = plt.Rectangle((-575, -60), 675, 100, color='g')
+        # ax.add_patch(rect)
+        #
+        # utilities.draw_road()
+        #
+        # all_rect = dict()
+        # for veh_id in self.all_data:
+        #     all_rect[veh_id] = plt.Rectangle((self.all_data[veh_id][0][0], self.all_data[veh_id][0][1]), 4.5, 2.0, color='r')
+        #     ax.add_patch(all_rect[veh_id])
+        #
+        # frames_num = 0
+        # for _ in self.all_data:
+        #     if len(self.all_data[_]) > frames_num:
+        #         frames_num = len(self.all_data[_])
+        #
+        # anime = FuncAnimation(fig=fig, func=partial(utilities.update_ns3,
+        #                                             obj_dict=all_rect,
+        #                                             obj_data=self.all_data), frames=frames_num,  interval=1000 / 60)
+        #
+        # anime.save("./gifs/demo_" + "ns3_rl" + ".gif")
+        # plt.close()
 
         start_points = dict()
         for veh_id in veh_in_merge:
@@ -243,7 +259,41 @@ class Engine:
         plt.savefig("./images/time-steer.jpg")
         plt.close()
 
+    def save_vehicle_data(self, veh_in_merge):
+        if not os.path.exists('./data/'):
+            os.makedirs('./data/')
+
+        for veh_id in veh_in_merge:
+            # 获取当前车辆的数据
+            one_veh_datas = np.array(self.all_data[veh_id])
+            one_veh_actions = np.array(self.all_action[veh_id])
+
+            # 文件路径
+            file_name = f'./data/vehicle_{veh_id}_data.csv'
+
+            with open(file_name, mode='w', newline='') as file:
+                writer = csv.writer(file)
+                # 写入文件头
+                writer.writerow(['time', 'x', 'y', 'speed', 'acc', 'steer', 'body_angle'])
+
+                # 将车辆的数据逐行写入 CSV
+                for i in range(len(one_veh_datas)):
+                    time = i  # 或者自定义时间值（如果存在时间信息的话）
+                    x = one_veh_datas[i][0]
+                    y = one_veh_datas[i][1]
+                    speed = one_veh_datas[i][2]
+                    body_angle = one_veh_datas[i][3]
+
+                    # 车辆的控制数据（acc, steer）
+                    acc = one_veh_actions[i][0]
+                    steer = one_veh_actions[i][1]
+
+                    # 写入数据行
+                    writer.writerow([time, x, y, speed, acc, steer, body_angle])
+
+            print(f"Vehicle {veh_id} data saved to {file_name}")
 
 e = Engine()
 e.server_start()
 e.server_run()
+

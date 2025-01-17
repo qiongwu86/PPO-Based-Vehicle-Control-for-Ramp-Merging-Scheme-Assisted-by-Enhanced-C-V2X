@@ -1,11 +1,11 @@
 import numpy as np
 import torch.nn as nn
 import torch.nn.functional as F
-
+import math
 import buffer
 import vehicle
 import torch
-
+import road
 
 class cacc_engine:
     def __init__(self):
@@ -34,6 +34,128 @@ class cacc_engine:
             return v + 0.45 * spacingErr + 0.05 * spacingErr1
         else:
             return v + 0.005 * spacingErr + 0.05 * spacingErr1
+
+
+class cacc_TP_engine:
+    def __init__(self):
+        # 两点控制参数
+        self.k_f = 0.5  # 远点比例系数
+        self.k_n = 0.05  # 近点比例系数
+        self.k_I = 0.02  # 积分比例系数
+        self.integral_errors = {}  # 维护每辆车的积分误差 {vehicle_id: integral_error}
+
+    def generate_action(self, state, vehicle_id):
+        """
+        联合 CACC 和两点算法控制车辆。
+
+        参数：
+            state: tuple - 状态信息 (x, y, theta, v, acc, exist, s_, v_)
+            centerline: list - 道路中心线坐标 [(x1, y1), (x2, y2), ...]
+            far_distance: float - 远点距离
+
+        返回：
+            action: np.array - 控制输出 [acceleration, steering_angle]
+        """
+        # 状态分解
+        if vehicle_id not in self.integral_errors:
+            self.integral_errors[vehicle_id] = 0  # 初始化积分误差为 0
+
+        centerline = road.get_center_line()
+        far_distance = 20
+        near_distance = 5
+        s, x, y, theta, v, acc, exist, s_, v_ = state
+        print('theta', theta)
+
+        # === CACC 速度控制 ===
+        if exist:  # 有前车
+            des_spacing = vehicle.Vehicle.headway_time * v  # 理想车距
+            act_spacing = s_ - s  # 实际车距
+            spacing_err = act_spacing - des_spacing  # 距离误差
+            speed_err = v_ - v  # 速度误差
+            spacing_err1 = speed_err + vehicle.Vehicle.headway_time * acc
+            new_speed = self._generate_new_speed(v, spacing_err, spacing_err1, speed_err)
+        else:  # 无前车，保持期望速度
+            new_speed = vehicle.Vehicle.expect_speed
+
+        # 计算加速度，限制在范围内
+        acc = np.clip((new_speed - v) / 0.1, vehicle.Vehicle.acc_min, vehicle.Vehicle.acc_max)
+
+        # === 计算远点和近点 ===
+        far_point = self.get_far_point((x, y), centerline, far_distance)  # 计算远点
+        near_point = self.calculate_near_point((x, y), centerline, near_distance)  # 计算近点
+        print('x,y, near, far', x, y, near_point, far_point)
+
+        # === 两点转向角控制 ===
+        steering_angle = self._generate_steering_angle(near_point, far_point, (x, y), theta, vehicle_id)
+
+        # 返回动作
+        return np.array([acc, steering_angle])
+
+    @staticmethod
+    def _generate_new_speed(v, spacing_err, spacing_err1, speed_err):
+        """
+        根据 CACC 逻辑生成目标速度。
+        """
+        if 0 < spacing_err < 0.2 and speed_err < 0.1:
+            return v + 0.45 * spacing_err + 0.125 * spacing_err1
+        elif spacing_err < 0:
+            return v + 0.45 * spacing_err + 0.05 * spacing_err1
+        else:
+            return v + 0.005 * spacing_err + 0.05 * spacing_err1
+
+    def calculate_near_point(self, vehicle_pos, centerline, near_distance):
+        """
+        计算近点：车辆前方 5 米处的全局坐标。
+        """
+        target_x = vehicle_pos[0] + near_distance
+        centerline_array = np.array(centerline)  # 转为数组
+        distances = np.abs(centerline_array[:, 0] - target_x)  # x 坐标距离
+        nearest_index = np.argmin(distances)  # 最近点索引
+        return centerline_array[nearest_index]  # 返回最近点的坐标
+        # if (-575 < x < -375) or (-175 < x < 100):
+        #     direction_global = delta
+        # else:
+        #     direction_global = delta + 15 * math.pi / 180
+        #
+        # # 距离为 5 米
+        # distance = 5
+        # delta_x = distance * np.cos(direction_global)
+        # delta_y = distance * np.sin(direction_global)
+        #
+        # # 计算全局坐标
+        # x_near = x + delta_x
+        # y_near = y + delta_y
+        #
+        # return np.array([x_near, y_near])
+
+    def get_far_point(self, vehicle_pos, centerline, far_distance):
+        """
+        根据车辆位置和道路中心线计算远点的全局坐标。
+        """
+        target_x = vehicle_pos[0] + far_distance
+        centerline_array = np.array(centerline)  # 转为数组
+        distances = np.abs(centerline_array[:, 0] - target_x)  # x 坐标距离
+        nearest_index = np.argmin(distances)  # 最近点索引
+        return centerline_array[nearest_index]  # 返回最近点的坐标
+
+    def _generate_steering_angle(self, near_point, far_point, vehicle_pos, vehicle_theta, vehicle_id):
+        """
+        使用两点算法计算转向角。
+        """
+        # 计算远点方向误差
+        delta_y_f = np.arctan2(far_point[1] - vehicle_pos[1], far_point[0] - vehicle_pos[0]) - vehicle_theta
+        # 计算近点方向误差
+        delta_y_n = np.arctan2(near_point[1] - vehicle_pos[1], near_point[0] - vehicle_pos[0]) - vehicle_theta
+
+        # 更新积分误差
+        self.integral_errors[vehicle_id] += delta_y_n * vehicle.Vehicle.headway_time  # 假设时间步长为 0.1 秒
+        self.integral_errors[vehicle_id] = np.clip(self.integral_errors[vehicle_id], -1, 1)  # 限制积分误差
+
+        # 综合计算转向角
+        steering_angle = self.k_f * delta_y_f + self.k_n * delta_y_n + self.k_I * self.integral_errors[vehicle_id]
+        steering_angle = np.clip(steering_angle, vehicle.Vehicle.steer_min, vehicle.Vehicle.steer_max)
+        print('yf, yn, integral_errors', delta_y_f, delta_y_n, self.integral_errors[vehicle_id])
+        return steering_angle
 
 
 class rl_engine:

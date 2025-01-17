@@ -6,14 +6,15 @@ aoi_threshold = [40, 60, 80, 100, 120]
 pos_error_threshold = [2, 3, 4, 5]
 dis_threshold = [50, 100, 150, 200]
 inf_vehs = [0, 20, 40]
-run = [111, 222, 333, 444, 555]
+run = [11, 22, 33, 44, 55]
+run2 = [1, 2, 3, 4, 5]
 
 
-std_aoi_file_name_template = "./std/{0}_{1}_AoI_over"
-mod_aoi_file_name_template = "./mod/{0}_{1}_AoI_over"
+std_aoi_file_name_template = "./results_mod/{0}_{1}_AoI_over"
+mod_aoi_file_name_template = "./results_mod/{0}_{1}_AoI_over"
 
-std_pos_file_name_template = "./std/{0}_{1}_position_error"
-mod_pos_file_name_template = "./mod/{0}_{1}_position_error"
+std_pos_file_name_template = "./results_mod/{0}_{1}_position_error"
+mod_pos_file_name_template = "./results_mod/{0}_{1}_position_error"
 
 
 # 位置误差
@@ -40,7 +41,7 @@ for infNum in inf_vehs:
 #         mod
         for pos_error in pos_error_threshold:
             pos_error_of_one_pos_th = 0.0
-            for runParm in run:
+            for runParm in run2:
                 mod_file = mod_pos_file_name_template.format(infNum, runParm)
                 lines = open(mod_file, 'r').readlines()
                 line = (lines[1+(int(dis/50.0)-1)*6 + pos_error][: -1]).split("  ")
@@ -65,7 +66,8 @@ for infNum in inf_vehs:
     ax.yaxis.set_major_formatter(ticker.PercentFormatter(xmax=1))
 
     plt.savefig("./images/" + str(infNum) + "position_error_rate.jpg")
-    plt.close()
+    plt.show()
+    # plt.close()
 
 
 # Aoi误差
@@ -92,7 +94,7 @@ for infNum in inf_vehs:
         # mod
         for aoi_over in aoi_threshold:
             aoi_th_of_one_pos_th = 0.0
-            for runParm in run:
+            for runParm in run2:
                 mod_file = mod_aoi_file_name_template.format(infNum, runParm)
                 lines = open(mod_file, 'r').readlines()
                 line = lines[1+(int(dis/50.0)-1)*6 + int((aoi_over-20.0)/20.0)][:-1].split("  ")
@@ -117,25 +119,26 @@ for infNum in inf_vehs:
     ax.yaxis.set_major_formatter(ticker.PercentFormatter(xmax=1))
 
     plt.savefig("./images/" + str(infNum) + "aoi_over_rate.jpg")
-    plt.close()
+    plt.show()
+    # plt.close()
 
 
-# std_aoi = []
-# mod_aoi = []
-# for infNum in inf_vehs:
-#     std_temp = 0.0
-#     mod_temp = 0.0
-#     for runParm in run:
-#         std_file = std_aoi_file_name_template.format(infNum, runParm)
-#         line = open(std_file, 'r').readlines()[-1][:-1]
-#         std_temp += float(line.split("= ")[-1])
-#     std_aoi.append(std_temp/5)
-#     for runParm in run:
-#         mod_file = mod_aoi_file_name_template.format(infNum, runParm)
-#         line = open(mod_file, 'r').readlines()[-1][:-1]
-#         mod_temp += float(line.split("= ")[-1])
-#     mod_aoi.append(mod_temp/5)
-# print(std_aoi)
-# print(mod_aoi)
+std_aoi = []
+mod_aoi = []
+for infNum in inf_vehs:
+    std_temp = 0.0
+    mod_temp = 0.0
+    for runParm in run:
+        std_file = std_aoi_file_name_template.format(infNum, runParm)
+        line = open(std_file, 'r').readlines()[-1][:-1]
+        std_temp += float(line.split("= ")[-1])
+    std_aoi.append(std_temp/5)
+    for runParm in run2:
+        mod_file = mod_aoi_file_name_template.format(infNum, runParm)
+        line = open(mod_file, 'r').readlines()[-1][:-1]
+        mod_temp += float(line.split("= ")[-1])
+    mod_aoi.append(mod_temp/5)
+print(std_aoi)
+print(mod_aoi)
 
 

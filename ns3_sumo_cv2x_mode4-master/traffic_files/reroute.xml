@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- generated on 2023-07-10 04:00:15.286361 by generateContinuousRerouters.py UNKNOWN
+  options: -n traffic_files/net.xml -o traffic_files/reroute.xml
+-->
+
+<additional xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/additional_file.xsd">
+    <route id="A1A0_A0B0" edges="A1A0 A0B0"/>
+    <route id="B0A0_A0A1" edges="B0A0 A0A1"/>
+    <route id="A0A1_A1A0" edges="A0A1 A1A0 A0B0"/>
+    <route id="A0A1_A1A2" edges="A0A1 A1A2 A2B2"/>
+    <route id="A0A1_A1B1" edges="A0A1 A1B1"/>
+    <rerouter id="rr_A0A1" edges="A0A1">
+        <interval begin="0" end="3600">
+            <routeProbReroute id="A0A1_A1A0" probability="0"/>
+            <routeProbReroute id="A0A1_A1A2" probability="50.0"/>
+            <routeProbReroute id="A0A1_A1B1" probability="30.0"/>
+        </interval>
+    </rerouter>
+    <route id="A2A1_A1A0" edges="A2A1 A1A0 A0B0"/>
+    <route id="A2A1_A1A2" edges="A2A1 A1A2 A2B2"/>
+    <route id="A2A1_A1B1" edges="A2A1 A1B1"/>
+    <rerouter id="rr_A2A1" edges="A2A1">
+        <interval begin="0" end="3600">
+            <routeProbReroute id="A2A1_A1A0" probability="50.0"/>
+            <routeProbReroute id="A2A1_A1A2" probability="0"/>
+            <routeProbReroute id="A2A1_A1B1" probability="20.0"/>
+        </interval>
+    </rerouter>
+    <route id="B1A1_A1A0" edges="B1A1 A1A0 A0B0"/>
+    <route id="B1A1_A1A2" edges="B1A1 A1A2 A2B2"/>
+    <route id="B1A1_A1B1" edges="B1A1 A1B1"/>
+    <rerouter id="rr_B1A1" edges="B1A1">
+        <interval begin="0" end="3600">
+            <routeProbReroute id="B1A1_A1A0" probability="20.0"/>
+            <routeProbReroute id="B1A1_A1A2" probability="30.0"/>
+            <routeProbReroute id="B1A1_A1B1" probability="0"/>
+        </interval>
+    </rerouter>
+    <route id="A0B0_B0A0" edges="A0B0 B0A0 A0A1"/>
+    <route id="A0B0_B0B1" edges="A0B0 B0B1"/>
+    <route id="A0B0_B0C0" edges="A0B0 B0C0 C0C1"/>
+    <rerouter id="rr_A0B0" edges="A0B0">
+        <interval begin="0" end="3600">
+            <routeProbReroute id="A0B0_B0A0" probability="0"/>
+            <routeProbReroute id="A0B0_B0B1" probability="20.0"/>
+            <routeProbReroute id="A0B0_B0C0" probability="50.0"/>
+        </interval>
+    </rerouter>
+    <route id="B1B0_B0A0" edges="B1B0 B0A0 A0A1"/>
+    <route id="B1B0_B0B1" edges="B1B0 B0B1"/>
+    <route id="B1B0_B0C0" edges="B1B0 B0C0 C0C1"/>
+    <rerouter id="rr_B1B0" edges="B1B0">
+        <interval begin="0" end="3600">
+            <routeProbReroute id="B1B0_B0A0" probability="30.0"/>
+            <routeProbReroute id="B1B0_B0B1" probability="0"/>
+            <routeProbReroute id="B1B0_B0C0" probability="20.0"/>
+        </interval>
+    </rerouter>
+    <route id="C0B0_B0A0" edges="C0B0 B0A0 A0A1"/>
+    <route id="C0B0_B0B1" edges="C0B0 B0B1"/>
+    <route id="C0B0_B0C0" edges="C0B0 B0C0 C0C1"/>
+    <rerouter id="rr_C0B0" edges="C0B0">
+        <interval begin="0" end="3600">
+            <routeProbReroute id="C0B0_B0A0" probability="50.0"/>
+            <routeProbReroute id="C0B0_B0B1" probability="30.0"/>
+            <routeProbReroute id="C0B0_B0C0" probability="0"/>
+        </interval>
+    </rerouter>
+    <route id="A1A2_A2B2" edges="A1A2 A2B2"/>
+    <route id="B2A2_A2A1" edges="B2A2 A2A1"/>
+    <route id="A1B1_B1A1" edges="A1B1 B1A1"/>
+    <route id="A1B1_B1B0" edges="A1B1 B1B0"/>
+    <route id="A1B1_B1B2" edges="A1B1 B1B2"/>
+    <route id="A1B1_B1C1" edges="A1B1 B1C1"/>
+    <rerouter id="rr_A1B1" edges="A1B1">
+        <interval begin="0" end="3600">
+            <routeProbReroute id="A1B1_B1A1" probability="0"/>
+            <routeProbReroute id="A1B1_B1B0" probability="30.0"/>
+            <routeProbReroute id="A1B1_B1B2" probability="20.0"/>
+            <routeProbReroute id="A1B1_B1C1" probability="50.0"/>
+        </interval>
+    </rerouter>
+    <route id="B0B1_B1A1" edges="B0B1 B1A1"/>
+    <route id="B0B1_B1B0" edges="B0B1 B1B0"/>
+    <route id="B0B1_B1B2" edges="B0B1 B1B2"/>
+    <route id="B0B1_B1C1" edges="B0B1 B1C1"/>
+    <rerouter id="rr_B0B1" edges="B0B1">
+        <interval begin="0" end="3600">
+            <routeProbReroute id="B0B1_B1A1" probability="20.0"/>
+            <routeProbReroute id="B0B1_B1B0" probability="0"/>
+            <routeProbReroute id="B0B1_B1B2" probability="50.0"/>
+            <routeProbReroute id="B0B1_B1C1" probability="30.0"/>
+        </interval>
+    </rerouter>
+    <route id="B2B1_B1A1" edges="B2B1 B1A1"/>
+    <route id="B2B1_B1B0" edges="B2B1 B1B0"/>
+    <route id="B2B1_B1B2" edges="B2B1 B1B2"/>
+    <route id="B2B1_B1C1" edges="B2B1 B1C1"/>
+    <rerouter id="rr_B2B1" edges="B2B1">
+        <interval begin="0" end="3600">
+            <routeProbReroute id="B2B1_B1A1" probability="30.0"/>
+            <routeProbReroute id="B2B1_B1B0" probability="50.0"/>
+            <routeProbReroute id="B2B1_B1B2" probability="0"/>
+            <routeProbReroute id="B2B1_B1C1" probability="20.0"/>
+        </interval>
+    </rerouter>
+    <route id="C1B1_B1A1" edges="C1B1 B1A1"/>
+    <route id="C1B1_B1B0" edges="C1B1 B1B0"/>
+    <route id="C1B1_B1B2" edges="C1B1 B1B2"/>
+    <route id="C1B1_B1C1" edges="C1B1 B1C1"/>
+    <rerouter id="rr_C1B1" edges="C1B1">
+        <interval begin="0" end="3600">
+            <routeProbReroute id="C1B1_B1A1" probability="50.0"/>
+            <routeProbReroute id="C1B1_B1B0" probability="20.0"/>
+            <routeProbReroute id="C1B1_B1B2" probability="30.0"/>
+            <routeProbReroute id="C1B1_B1C1" probability="0"/>
+        </interval>
+    </rerouter>
+    <route id="A2B2_B2A2" edges="A2B2 B2A2 A2A1"/>
+    <route id="A2B2_B2B1" edges="A2B2 B2B1"/>
+    <route id="A2B2_B2C2" edges="A2B2 B2C2 C2C1"/>
+    <rerouter id="rr_A2B2" edges="A2B2">
+        <interval begin="0" end="3600">
+            <routeProbReroute id="A2B2_B2A2" probability="0"/>
+            <routeProbReroute id="A2B2_B2B1" probability="30.0"/>
+            <routeProbReroute id="A2B2_B2C2" probability="50.0"/>
+        </interval>
+    </rerouter>
+    <route id="B1B2_B2A2" edges="B1B2 B2A2 A2A1"/>
+    <route id="B1B2_B2B1" edges="B1B2 B2B1"/>
+    <route id="B1B2_B2C2" edges="B1B2 B2C2 C2C1"/>
+    <rerouter id="rr_B1B2" edges="B1B2">
+        <interval begin="0" end="3600">
+            <routeProbReroute id="B1B2_B2A2" probability="20.0"/>
+            <routeProbReroute id="B1B2_B2B1" probability="0"/>
+            <routeProbReroute id="B1B2_B2C2" probability="30.0"/>
+        </interval>
+    </rerouter>
+    <route id="C2B2_B2A2" edges="C2B2 B2A2 A2A1"/>
+    <route id="C2B2_B2B1" edges="C2B2 B2B1"/>
+    <route id="C2B2_B2C2" edges="C2B2 B2C2 C2C1"/>
+    <rerouter id="rr_C2B2" edges="C2B2">
+        <interval begin="0" end="3600">
+            <routeProbReroute id="C2B2_B2A2" probability="50.0"/>
+            <routeProbReroute id="C2B2_B2B1" probability="20.0"/>
+            <routeProbReroute id="C2B2_B2C2" probability="0"/>
+        </interval>
+    </rerouter>
+    <route id="B0C0_C0C1" edges="B0C0 C0C1"/>
+    <route id="C1C0_C0B0" edges="C1C0 C0B0"/>
+    <route id="B1C1_C1B1" edges="B1C1 C1B1"/>
+    <route id="B1C1_C1C0" edges="B1C1 C1C0 C0B0"/>
+    <route id="B1C1_C1C2" edges="B1C1 C1C2 C2B2"/>
+    <rerouter id="rr_B1C1" edges="B1C1">
+        <interval begin="0" end="3600">
+            <routeProbReroute id="B1C1_C1B1" probability="0"/>
+            <routeProbReroute id="B1C1_C1C0" probability="30.0"/>
+            <routeProbReroute id="B1C1_C1C2" probability="20.0"/>
+        </interval>
+    </rerouter>
+    <route id="C0C1_C1B1" edges="C0C1 C1B1"/>
+    <route id="C0C1_C1C0" edges="C0C1 C1C0 C0B0"/>
+    <route id="C0C1_C1C2" edges="C0C1 C1C2 C2B2"/>
+    <rerouter id="rr_C0C1" edges="C0C1">
+        <interval begin="0" end="3600">
+            <routeProbReroute id="C0C1_C1B1" probability="20.0"/>
+            <routeProbReroute id="C0C1_C1C0" probability="0"/>
+            <routeProbReroute id="C0C1_C1C2" probability="50.0"/>
+        </interval>
+    </rerouter>
+    <route id="C2C1_C1B1" edges="C2C1 C1B1"/>
+    <route id="C2C1_C1C0" edges="C2C1 C1C0 C0B0"/>
+    <route id="C2C1_C1C2" edges="C2C1 C1C2 C2B2"/>
+    <rerouter id="rr_C2C1" edges="C2C1">
+        <interval begin="0" end="3600">
+            <routeProbReroute id="C2C1_C1B1" probability="30.0"/>
+            <routeProbReroute id="C2C1_C1C0" probability="50.0"/>
+            <routeProbReroute id="C2C1_C1C2" probability="0"/>
+        </interval>
+    </rerouter>
+    <route id="B2C2_C2C1" edges="B2C2 C2C1"/>
+    <route id="C1C2_C2B2" edges="C1C2 C2B2"/>
+</additional>

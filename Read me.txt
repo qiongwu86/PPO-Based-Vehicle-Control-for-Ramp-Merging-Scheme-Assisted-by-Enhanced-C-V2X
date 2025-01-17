@@ -1,0 +1,7 @@
+测试时先在主机运行server.py，再在虚拟机启动NS3.
+NS3启动步骤：
+./waf configure
+./waf build
+./waf --run v2x_communication_example
+如果SUMO相关组件报错，可以删除ns3_sumo_cv2x_mode4-master\scratch\sumo_sim文件夹
+运行对比算法CACC-TP时，同样在server中，rl部分前有注释掉的代码，取消注释并将rl部分注释掉。将NS3文件夹中的三个文件替换ns3_sumo_cv2x_mode4-master\scratch\v2x_communication_example中的三个文件。注意检查主机和虚拟机的ip地址和端口，需要在代码中修改。
